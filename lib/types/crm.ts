@@ -17,6 +17,8 @@ export type OutreachContact = {
   contact_email: string | null
   contact_website: string | null
   province: string | null
+  city: string | null
+  region_cluster: string | null
   unspsc_categories: string[]
   ibd_registered: boolean
   source_url: string | null
