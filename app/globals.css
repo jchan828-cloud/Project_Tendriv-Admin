@@ -1,3 +1,497 @@
+/**
+ * TENDRIV v4 — Global Design Tokens
+ * Brand: Jade v3 | Contract Version: 1.0 | Status: LOCKED
+ *
+ * Token hierarchy:
+ *   1. Primitive palette  (raw values — internal only)
+ *   2. Semantic tokens    (light theme — default)
+ *   3. Semantic tokens    (dark theme  — .dark on <html>)
+ *   4. Typography scale
+ *   5. Component utilities
+ *   6. Animation
+ *   7. Print
+ *
+ * RULE: Components always consume semantic tokens (var(--surface-root)),
+ *       never primitives (var(--ink-05)).
+ */
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* ─────────────────────────────────────────────────────────────
+   1. PRIMITIVE PALETTE
+   ───────────────────────────────────────────────────────────── */
+:root {
+  --ink:        #0A0C10;
+  --ink-90:     #0F1218;
+  --ink-80:     #161B24;
+  --ink-60:     #2A3344;
+  --ink-40:     #4A5668;
+  --ink-20:     #8A97A8;
+  --ink-10:     #C4CBD4;
+  --ink-05:     #EDF0F3;
+  --white:      #FAFBFC;
+
+  /* Tendriv Jade */
+  --jade:       #00C896;
+  --jade-dim:   #009E77;
+  --jade-glow:  #33D9AD;
+  --jade-pale:  #E0FBF4;
+  --jade-10:    rgba(0, 200, 150, 0.10);
+  --jade-15:    rgba(0, 200, 150, 0.15);
+  --jade-20:    rgba(0, 200, 150, 0.20);
+
+  /* Sovereign Signal — compliance alerts ONLY, never decorative */
+  --sovereign:        #FF4D3D;
+  --sovereign-dim:    #D93B2C;
+  --sovereign-pale:   rgba(255, 77, 61, 0.08);
+  --sovereign-border: rgba(255, 77, 61, 0.20);
+
+  /* Status primitives */
+  --green:      #10B981;
+  --green-bg:   rgba(16, 185, 129, 0.08);
+  --amber:      #F59E0B;
+  --amber-bg:   rgba(245, 158, 11, 0.08);
+  --blue:       #3B82F6;
+  --blue-bg:    rgba(59, 130, 246, 0.08);
+  --purple:     #8B5CF6;
+  --purple-bg:  rgba(139, 92, 246, 0.08);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   2. SEMANTIC TOKENS — LIGHT THEME (default)
+   ───────────────────────────────────────────────────────────── */
+:root {
+  /* Surfaces */
+  --surface-root:        var(--white);
+  --surface-sidebar:     var(--ink-05);
+  --surface-card-solid:  var(--white);
+  --surface-hover:       var(--ink-05);
+  --surface-active:      var(--jade-pale);
+  --surface-input:       var(--white);
+  --surface-badge:       var(--ink-05);
+
+  /* Borders */
+  --border:              var(--ink-10);
+  --border-primary:      var(--jade);
+  --border-subtle:       var(--ink-05);
+  --border-input:        var(--ink-10);
+  --border-focus:        var(--jade);
+
+  /* Text */
+  --text-heading:        var(--ink);
+  --text-body:           var(--ink-60);
+  --text-muted:          var(--ink-40);
+  --text-label:          var(--ink-20);
+  --text-inverse:        var(--white);
+  --text-link:           var(--jade-dim);
+
+  /* Brand */
+  --brand-primary:        var(--jade);
+  --brand-primary-hover:  var(--jade-dim);
+  --brand-primary-subtle: var(--jade-pale);
+  --brand-secondary:      var(--sovereign);
+
+  /* Status */
+  --status-success:      var(--green);
+  --status-success-bg:   var(--green-bg);
+  --status-warning:      var(--amber);
+  --status-warning-bg:   var(--amber-bg);
+  --status-info:         var(--blue);
+  --status-info-bg:      var(--blue-bg);
+  --status-danger:       var(--sovereign);
+  --status-danger-bg:    var(--sovereign-pale);
+  --status-neutral:      var(--ink-40);
+  --status-neutral-bg:   var(--ink-05);
+  --status-purple:       var(--purple);
+  --status-purple-bg:    var(--purple-bg);
+
+  /* Navigation */
+  --nav-active-indicator: var(--jade);
+
+  /* Components */
+  --avatar-bg:           var(--jade-pale);
+  --avatar-text:         var(--jade-dim);
+  --progress-track:      var(--ink-10);
+  --progress-fill-good:  var(--jade);
+  --progress-fill-ok:    var(--amber);
+  --progress-fill-low:   var(--sovereign);
+  --tab-active-bg:       var(--white);
+  --tab-active-border:   var(--jade);
+
+  /* shadcn/ui bridge */
+  --background:          var(--white);
+  --foreground:          var(--ink);
+  --card:                var(--white);
+  --card-foreground:     var(--ink);
+  --popover:             var(--white);
+  --popover-foreground:  var(--ink);
+  --primary:             var(--jade);
+  --primary-foreground:  var(--white);
+  --secondary:           var(--ink-05);
+  --secondary-foreground:var(--ink-60);
+  --muted:               var(--ink-05);
+  --muted-foreground:    var(--ink-40);
+  --accent:              var(--jade-pale);
+  --accent-foreground:   var(--jade-dim);
+  --destructive:         var(--sovereign);
+  --destructive-foreground: var(--white);
+  --input:               var(--ink-10);
+  --ring:                var(--jade);
+
+  /* Shadows */
+  --card-shadow:       0 1px 3px 0 rgba(10,12,16,0.08), 0 1px 2px -1px rgba(10,12,16,0.04);
+  --card-shadow-hover: 0 4px 12px 0 rgba(10,12,16,0.10), 0 2px 4px -1px rgba(10,12,16,0.06);
+  --sovereignty-glow:  0 0 0 3px var(--jade-15);
+
+  /* Radius */
+  --radius: 0.5rem;
+
+  /* Fonts */
+  --heading-font: 'Inter', sans-serif;
+  --body-font:    'Inter', sans-serif;
+  --mono-font:    'IBM Plex Mono', monospace;
+
+  /* Motion */
+  --ease-out-expo:  cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out:    cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-spring:    cubic-bezier(0.34, 1.56, 0.64, 1);
+  --duration-fast:  100ms;
+  --duration-base:  150ms;
+  --duration-slow:  300ms;
+  --duration-slower:500ms;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   3. SEMANTIC TOKENS — DARK THEME
+   ───────────────────────────────────────────────────────────── */
+.dark {
+  --surface-root:        var(--ink-90);
+  --surface-sidebar:     var(--ink-80);
+  --surface-card-solid:  var(--ink-80);
+  --surface-hover:       var(--ink-60);
+  --surface-active:      var(--jade-10);
+  --surface-input:       var(--ink-80);
+  --surface-badge:       var(--ink-60);
+  --border:              var(--ink-60);
+  --border-subtle:       var(--ink-80);
+  --border-input:        var(--ink-60);
+  --text-heading:        var(--white);
+  --text-body:           var(--ink-20);
+  --text-muted:          var(--ink-40);
+  --text-label:          var(--ink-40);
+  --text-link:           var(--jade-glow);
+  --brand-primary-subtle:var(--jade-10);
+  --progress-track:      var(--ink-60);
+  --tab-active-bg:       var(--ink-60);
+  --background:          var(--ink-90);
+  --foreground:          var(--white);
+  --card:                var(--ink-80);
+  --card-foreground:     var(--white);
+  --popover:             var(--ink-80);
+  --popover-foreground:  var(--white);
+  --secondary:           var(--ink-60);
+  --secondary-foreground:var(--ink-10);
+  --muted:               var(--ink-60);
+  --muted-foreground:    var(--ink-40);
+  --accent:              var(--jade-10);
+  --accent-foreground:   var(--jade-glow);
+  --input:               var(--ink-60);
+  --card-shadow:       0 1px 3px 0 rgba(0,0,0,0.40), 0 1px 2px -1px rgba(0,0,0,0.20);
+  --card-shadow-hover: 0 4px 16px 0 rgba(0,0,0,0.50), 0 2px 4px -1px rgba(0,0,0,0.30);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   4. BASE + TYPOGRAPHY
+   ───────────────────────────────────────────────────────────── */
+@layer base {
+  html {
+    font-family: var(--body-font);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    background-color: var(--surface-root);
+    color: var(--text-body);
+    font-size: 15px;
+    line-height: 1.6;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--heading-font);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    color: var(--text-heading);
+  }
+
+  a {
+    color: var(--text-link);
+    text-decoration: none;
+  }
+
+  a:hover {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  *:focus-visible {
+    outline: 2px solid var(--jade);
+    outline-offset: 2px;
+    border-radius: 3px;
+  }
+
+  ::selection {
+    background-color: var(--jade-pale);
+    color: var(--ink);
+  }
+
+  .dark ::selection {
+    background-color: var(--jade-20);
+    color: var(--white);
+  }
+
+  ::-webkit-scrollbar        { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track  { background: transparent; }
+  ::-webkit-scrollbar-thumb  { background-color: var(--ink-10); border-radius: 3px; }
+  .dark ::-webkit-scrollbar-thumb { background-color: var(--ink-60); }
+}
+
+/* Typography utility classes */
+.text-display-xl  { font-family: var(--heading-font); font-size: clamp(48px, 6vw, 80px);  font-weight: 800; letter-spacing: -0.03em;  line-height: 1; }
+.text-display-lg  { font-family: var(--heading-font); font-size: clamp(36px, 4.5vw, 60px); font-weight: 800; letter-spacing: -0.025em; line-height: 1.05; }
+.text-display-md  { font-family: var(--heading-font); font-size: clamp(28px, 3vw, 40px);  font-weight: 700; letter-spacing: -0.02em;  line-height: 1.1; }
+.text-heading-xl  { font-family: var(--heading-font); font-size: 28px; font-weight: 700; letter-spacing: -0.02em; }
+.text-heading-lg  { font-family: var(--heading-font); font-size: 24px; font-weight: 700; letter-spacing: -0.015em; }
+.text-heading-md  { font-family: var(--heading-font); font-size: 20px; font-weight: 600; letter-spacing: -0.01em; }
+.text-heading-sm  { font-family: var(--heading-font); font-size: 16px; font-weight: 600; letter-spacing: -0.005em; }
+.text-body-lg     { font-family: var(--body-font); font-size: 17px; line-height: 1.7; }
+.text-body-md     { font-family: var(--body-font); font-size: 15px; line-height: 1.6; }
+.text-body-sm     { font-family: var(--body-font); font-size: 13px; line-height: 1.6; }
+.text-body-xs     { font-family: var(--body-font); font-size: 12px; line-height: 1.5; }
+.text-label-md    { font-family: var(--body-font); font-size: 14px; font-weight: 500; }
+.text-label-sm    { font-family: var(--body-font); font-size: 12px; font-weight: 500; }
+.text-mono-md     { font-family: var(--mono-font); font-size: 13px; letter-spacing: 0.02em; }
+.text-mono-sm     { font-family: var(--mono-font); font-size: 11px; letter-spacing: 0.04em; }
+.text-mono-xs     { font-family: var(--mono-font); font-size: 10px; letter-spacing: 0.08em; }
+.text-eyebrow     { font-family: var(--mono-font); font-size: 10px; letter-spacing: 0.20em; text-transform: uppercase; color: var(--text-label); }
+.text-data-lg     { font-family: var(--mono-font); font-size: 24px; font-weight: 600; letter-spacing: -0.01em; }
+.text-data-md     { font-family: var(--mono-font); font-size: 18px; font-weight: 600; }
+.text-data-sm     { font-family: var(--mono-font); font-size: 13px; letter-spacing: 0.02em; }
+
+/* ─────────────────────────────────────────────────────────────
+   5. COMPONENT UTILITIES
+   ───────────────────────────────────────────────────────────── */
+@layer components {
+
+  /* Badges */
+  .badge {
+    @apply inline-flex items-center gap-1;
+    font-family: var(--mono-font);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 4px;
+    line-height: 1.4;
+  }
+  .badge-jade     { background-color: var(--jade-pale);       color: var(--jade-dim); }
+  .badge-sovereign{ background-color: var(--sovereign-pale);  color: var(--sovereign); border: 1px solid var(--sovereign-border); }
+  .badge-success  { background-color: var(--green-bg);        color: var(--green); }
+  .badge-warning  { background-color: var(--amber-bg);        color: var(--amber); }
+  .badge-neutral  { background-color: var(--surface-badge);   color: var(--text-muted); border: 1px solid var(--border); }
+  .badge-purple   { background-color: var(--purple-bg);       color: var(--purple); }
+
+  /* Buttons */
+  .btn-base {
+    @apply inline-flex items-center justify-center gap-2 whitespace-nowrap;
+    font-family: var(--body-font);
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    padding: 9px 18px;
+    border-radius: 7px;
+    border: none;
+    cursor: pointer;
+    transition: background-color var(--duration-base) ease,
+                box-shadow var(--duration-base) ease,
+                transform var(--duration-fast) ease;
+  }
+  .btn-base:active { transform: scale(0.98); }
+
+  .btn-primary {
+    @apply btn-base;
+    background-color: var(--jade);
+    color: #fff;
+  }
+  .btn-primary:hover {
+    background-color: var(--jade-dim);
+    box-shadow: 0 4px 12px var(--jade-20);
+  }
+
+  .btn-secondary {
+    @apply btn-base;
+    background-color: transparent;
+    color: var(--text-heading);
+    border: 1.5px solid var(--border);
+  }
+  .btn-secondary:hover { background-color: var(--surface-hover); }
+
+  .btn-ghost {
+    @apply btn-base;
+    background-color: transparent;
+    color: var(--text-muted);
+  }
+  .btn-ghost:hover { background-color: var(--surface-hover); color: var(--text-body); }
+
+  .btn-danger {
+    @apply btn-base;
+    background-color: var(--sovereign-pale);
+    color: var(--sovereign);
+    border: 1.5px solid var(--sovereign-border);
+  }
+  .btn-danger:hover { background-color: rgba(255, 77, 61, 0.14); }
+
+  .btn-sm { font-size: 12px; padding: 6px 12px; }
+  .btn-lg { font-size: 15px; padding: 12px 24px; }
+
+  /* Cards */
+  .card {
+    background-color: var(--surface-card-solid);
+    border: 1px solid var(--border);
+    border-radius: calc(var(--radius) * 2);
+    box-shadow: var(--card-shadow);
+    padding: 24px;
+    transition: box-shadow var(--duration-slow) ease;
+  }
+  .card:hover { box-shadow: var(--card-shadow-hover); }
+
+  .card-kicker {
+    font-family: var(--mono-font);
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text-label);
+    margin-bottom: 8px;
+  }
+
+  /* Section label with trailing rule */
+  .section-label {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-family: var(--mono-font);
+    font-size: 10px;
+    letter-spacing: 0.20em;
+    text-transform: uppercase;
+    color: var(--text-label);
+    margin-bottom: 24px;
+  }
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background-color: var(--border);
+  }
+
+  /* Inputs */
+  .input-base {
+    @apply w-full;
+    font-family: var(--body-font);
+    font-size: 14px;
+    background-color: var(--surface-input);
+    border: 1px solid var(--border-input);
+    border-radius: var(--radius);
+    padding: 9px 12px;
+    color: var(--text-heading);
+    transition: border-color var(--duration-base) ease,
+                box-shadow var(--duration-base) ease;
+    outline: none;
+  }
+  .input-base::placeholder { color: var(--text-label); }
+  .input-base:focus {
+    border-color: var(--border-focus);
+    box-shadow: var(--sovereignty-glow);
+  }
+
+  /* Progress bar */
+  .progress-bar      { height: 4px; background-color: var(--progress-track); border-radius: 2px; overflow: hidden; }
+  .progress-bar-fill { height: 100%; border-radius: 2px; background-color: var(--jade); transition: width 0.6s cubic-bezier(0.4,0,0.2,1); }
+
+  /* Sovereignty trust pill */
+  .sovereignty-pill {
+    @apply inline-flex items-center gap-1.5;
+    font-family: var(--mono-font);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border-radius: 100px;
+    background-color: var(--jade-pale);
+    color: var(--jade-dim);
+    border: 1px solid var(--jade-20);
+  }
+  .dark .sovereignty-pill {
+    background-color: var(--jade-10);
+    color: var(--jade-glow);
+    border-color: var(--jade-20);
+  }
+
+  /* Compliance requirement row */
+  .req-row {
+    @apply flex items-start gap-3;
+    font-family: var(--mono-font);
+    font-size: 12px;
+    letter-spacing: 0.02em;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .req-id           { color: var(--text-label); flex-shrink: 0; width: 80px; }
+  .req-label        { flex: 1; color: var(--text-body); }
+  .req-status-met   { color: var(--green);     flex-shrink: 0; }
+  .req-status-unmet { color: var(--sovereign); flex-shrink: 0; }
+
+  .divider { height: 1px; background-color: var(--border); }
+}
+
+/* ─────────────────────────────────────────────────────────────
+   6. ANIMATION
+   ───────────────────────────────────────────────────────────── */
+@keyframes fadeInUp      { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fadeIn        { from { opacity: 0; transform: translateY(8px);  } to { opacity: 1; transform: translateY(0); } }
+@keyframes slideInLeft   { from { opacity: 0; transform: translateX(-12px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes jadePulse     { 0%,100% { box-shadow: 0 0 0 0 var(--jade-15); } 50% { box-shadow: 0 0 0 6px transparent; } }
+@keyframes sovereignFlash{ 0%,100% { opacity: 1; } 50% { opacity: 0.6; } }
+
+@layer utilities {
+  .animate-fade-in        { animation: fadeIn        var(--duration-slow)   var(--ease-out-expo) both; }
+  .animate-fade-in-up     { animation: fadeInUp      var(--duration-slow)   var(--ease-out-expo) both; }
+  .animate-slide-in-left  { animation: slideInLeft   var(--duration-slow)   var(--ease-out-expo) both; }
+  .animate-jade-pulse     { animation: jadePulse     2.5s var(--ease-in-out) infinite; }
+  .animate-sovereign-flash{ animation: sovereignFlash 1.5s var(--ease-in-out) infinite; }
+
+  .stagger-1 { animation-delay: 50ms;  }
+  .stagger-2 { animation-delay: 100ms; }
+  .stagger-3 { animation-delay: 150ms; }
+  .stagger-4 { animation-delay: 200ms; }
+  .stagger-5 { animation-delay: 250ms; }
+  .stagger-6 { animation-delay: 300ms; }
+}
+
+/* ─────────────────────────────────────────────────────────────
+   7. PRINT
+   ───────────────────────────────────────────────────────────── */
+@media print {
+  :root {
+    --surface-root: #ffffff;
+    --text-heading: #0A0C10;
+    --text-body:    #2A3344;
+    --border:       #C4CBD4;
+    --jade:         #009E77;
+    --sovereign:    #D93B2C;
+  }
+  .no-print { display: none !important; }
+}

@@ -1,88 +1,42 @@
-import { notFound } from 'next/navigation';
-import Link from 'next/link';
-import { createServiceRoleClient } from '@/lib/supabase/server';
-import { ActivityTimeline } from '@/components/crm/activity-timeline';
-import type { OutreachContact, OutreachActivityLog, OutreachMatch } from '@/lib/types/crm';
+import { redirect, notFound } from 'next/navigation'
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server'
+import { CrmContactList } from '@/components/admin/crm-contact-list'
+import { CrmDetailClient } from '@/components/admin/crm-detail-client'
 
-export default async function CrmContactPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  const supabase = await createServiceRoleClient();
+export default async function CrmDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const supabase = await createServerSupabaseClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
 
-  const { data: contact } = await supabase
-    .from('outreach_contacts')
-    .select('*')
-    .eq('id', id)
-    .single<OutreachContact>();
+  const { id } = await params
+  const service = await createServiceRoleClient()
 
-  if (!contact) {
-    notFound();
-  }
+  const [{ data: contact }, { data: contacts }, { data: activities }, { data: matches }] =
+    await Promise.all([
+      service.from('outreach_contacts').select('*').eq('id', id).single(),
+      service.from('outreach_contacts')
+        .select('id, business_name, province, pipeline, status, last_activity_at')
+        .order('created_at', { ascending: false }),
+      service.from('outreach_activity_log')
+        .select('id, event_type, occurred_at')
+        .eq('contact_id', id)
+        .order('occurred_at', { ascending: false }),
+      service.from('outreach_matches')
+        .select('match_score, created_at, scout_notices(id, title, agency_canonical, closing_date, notice_type)')
+        .eq('contact_id', id)
+        .order('match_score', { ascending: false }),
+    ])
 
-  const [{ data: activities }, { data: matches }] = await Promise.all([
-    supabase
-      .from('outreach_activity_log')
-      .select('*')
-      .eq('contact_id', id)
-      .order('occurred_at', { ascending: false })
-      .returns<OutreachActivityLog[]>(),
-    supabase
-      .from('outreach_matches')
-      .select('*')
-      .eq('contact_id', id)
-      .returns<OutreachMatch[]>(),
-  ]);
+  if (!contact) notFound()
 
   return (
-    <div className="space-y-8">
-      <Link href="/crm" className="text-sm text-blue-600 hover:underline">&larr; Back to CRM</Link>
-
-      <div>
-        <h1 className="text-lg font-semibold text-gray-900">{contact.business_name}</h1>
-        <p className="mt-1 text-sm capitalize text-gray-500">{contact.pipeline} pipeline &middot; {contact.status}</p>
+    <div className="-m-6 flex h-[calc(100vh-49px)] overflow-hidden">
+      <div className="w-[280px] flex-shrink-0 border-r border-border flex flex-col bg-[var(--surface-root)]">
+        <CrmContactList contacts={contacts ?? []} activeId={id} />
       </div>
-
-      <section className="space-y-2">
-        <h2 className="text-sm font-semibold text-gray-700">Contact Details</h2>
-        <dl className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
-          <dt className="text-gray-500">Email</dt>
-          <dd>{contact.contact_email ?? '—'}</dd>
-          <dt className="text-gray-500">Website</dt>
-          <dd>{contact.contact_website ?? '—'}</dd>
-          <dt className="text-gray-500">Province</dt>
-          <dd>{contact.province ?? '—'}</dd>
-          <dt className="text-gray-500">Categories</dt>
-          <dd>{contact.unspsc_categories.length > 0 ? contact.unspsc_categories.join(', ') : '—'}</dd>
-        </dl>
-      </section>
-
-      <section className="space-y-2">
-        <h2 className="text-sm font-semibold text-gray-700">CASL Consent</h2>
-        <dl className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
-          <dt className="text-gray-500">Method</dt>
-          <dd>{contact.casl_consent_method ?? '—'}</dd>
-          <dt className="text-gray-500">Date</dt>
-          <dd>{contact.casl_consent_date ? new Date(contact.casl_consent_date).toLocaleDateString() : '—'}</dd>
-          <dt className="text-gray-500">Source</dt>
-          <dd>{contact.casl_consent_source ?? '—'}</dd>
-        </dl>
-      </section>
-
-      <section className="space-y-2">
-        <h2 className="text-sm font-semibold text-gray-700">
-          Matched Tenders
-          <span className="ml-2 rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
-            {matches?.length ?? 0}
-          </span>
-        </h2>
-        {(!matches || matches.length === 0) && (
-          <p className="text-sm text-gray-400">No matched tenders yet.</p>
-        )}
-      </section>
-
-      <section className="space-y-2">
-        <h2 className="text-sm font-semibold text-gray-700">Activity Timeline</h2>
-        <ActivityTimeline activities={activities ?? []} />
-      </section>
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <CrmDetailClient contact={contact} activities={activities ?? []} matches={matches ?? []} />
+      </div>
     </div>
-  );
+  )
 }

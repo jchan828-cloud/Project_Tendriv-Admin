@@ -1,31 +1,37 @@
-import { notFound } from 'next/navigation';
-import { MDXRemote } from 'next-mdx-remote/rsc';
-import { createServiceRoleClient } from '@/lib/supabase/server';
-import { DraftActions } from '@/components/drafts/draft-actions';
-import { CopyMdxButton } from '@/components/drafts/copy-mdx-button';
+import { redirect, notFound } from 'next/navigation'
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server'
+import { DraftIndexList } from '@/components/admin/draft-index-list'
+import { DraftDeskClient } from '@/components/admin/draft-desk-client'
+import { DraftSourcesSidebar } from '@/components/admin/draft-sources-sidebar'
 
 export default async function DraftDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  const supabase = await createServiceRoleClient();
-  const { data: draft } = await supabase.from('blog_drafts').select('*').eq('id', id).single();
-  if (!draft) notFound();
+  const supabase = await createServerSupabaseClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const { id } = await params
+  const service = await createServiceRoleClient()
+
+  const [{ data: draft }, { data: allDrafts }] = await Promise.all([
+    service.from('blog_drafts').select('*').eq('id', id).single(),
+    service.from('blog_drafts')
+      .select('id, title, tier, type, status, created_at')
+      .order('created_at', { ascending: false }),
+  ])
+
+  if (!draft) notFound()
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-start justify-between">
-        <div>
-          <h1 className="text-lg font-semibold text-gray-900">{draft.title}</h1>
-          <p className="text-sm text-gray-500">
-            {draft.tier} / {draft.type} — by {draft.generated_by} on{' '}
-            {new Date(draft.created_at).toLocaleDateString()}
-          </p>
-        </div>
-        <CopyMdxButton content={draft.content ?? ''} />
+    <div className="-m-6 flex h-[calc(100vh-49px)] overflow-hidden">
+      <div className="w-[220px] flex-shrink-0 border-r border-border flex flex-col bg-[var(--surface-root)]">
+        <DraftIndexList drafts={allDrafts ?? []} activeId={id} />
       </div>
-      <article className="prose prose-sm max-w-none rounded border border-gray-200 bg-white p-6">
-        <MDXRemote source={draft.content ?? ''} />
-      </article>
-      <DraftActions id={draft.id} status={draft.status} />
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <DraftDeskClient draft={draft} />
+      </div>
+      <div className="w-[192px] flex-shrink-0 border-l border-border overflow-y-auto">
+        <DraftSourcesSidebar draft={draft} />
+      </div>
     </div>
-  );
+  )
 }

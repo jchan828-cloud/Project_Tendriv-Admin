@@ -10,13 +10,20 @@ export async function PATCH(
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { id } = await params
-  const { status, reviewer_notes } = await req.json()
+  const { status } = await req.json()
   const service = await createServiceRoleClient()
   const { error } = await service
-    .from('blog_drafts')
-    .update({ status, reviewer_notes, reviewed_at: new Date().toISOString() })
+    .from('outreach_contacts')
+    .update({ status, last_activity_at: new Date().toISOString() })
     .eq('id', id)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  await service.from('outreach_activity_log').insert({
+    contact_id: id,
+    event_type: `status_${status}`,
+    occurred_at: new Date().toISOString(),
+  })
+
   return NextResponse.json({ success: true })
 }
