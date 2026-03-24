@@ -4,7 +4,21 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { BlogPost, PostStatus, BuyerStageValues } from '@/lib/types/cms'
+import { PostStatus, BuyerStageValues } from '@/lib/types/cms'
+import type { BuyerStage, ContentType } from '@/lib/types/cms'
+
+/** Lightweight subset of BlogPost used by the calendar views */
+export type CalendarPost = {
+  id: string
+  title: string
+  status: PostStatus
+  buyer_stage: BuyerStage | null
+  content_type: ContentType | null
+  target_keyword: string | null
+  word_count: number
+  scheduled_at: string | null
+  updated_at: string
+}
 
 type ViewMode = 'kanban' | 'list'
 
@@ -16,7 +30,7 @@ const KANBAN_COLUMNS: { status: PostStatus; label: string }[] = [
 ]
 
 interface CalendarBoardProps {
-  posts: BlogPost[]
+  posts: CalendarPost[]
 }
 
 function statusBadge(status: string): string {
@@ -111,7 +125,7 @@ export function CalendarBoard({ posts }: CalendarBoardProps) {
   )
 }
 
-function KanbanView({ posts }: { posts: BlogPost[] }) {
+function KanbanView({ posts }: { posts: CalendarPost[] }) {
   return (
     <div className="grid grid-cols-4 gap-4">
       {KANBAN_COLUMNS.map((col) => {
@@ -160,7 +174,7 @@ function ListView({
   onStatusFilter,
   onStageFilter,
 }: {
-  posts: BlogPost[]
+  posts: CalendarPost[]
   statusFilter: string
   stageFilter: string
   onStatusFilter: (v: string) => void

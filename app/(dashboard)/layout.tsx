@@ -1,25 +1,21 @@
-import Link from 'next/link';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient } from '@/lib/supabase/server'
+import { getUserRole } from '@/lib/auth/roles'
+import { Sidebar } from '@/components/layout/sidebar'
+import { Topbar } from '@/components/layout/topbar'
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const supabase = await createServerSupabaseClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const supabase = await createServerSupabaseClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  const role = user
+    ? await getUserRole(supabase, user.id)
+    : { role: 'admin' as const, modules: ['content', 'analytics', 'crm', 'system'] as const }
 
   return (
-    <div className="min-h-screen">
-      <header className="flex items-center justify-between border-b border-gray-200 bg-white px-6 py-3">
-        <nav className="flex items-center gap-4">
-          <Link href="/drafts" className="text-sm font-semibold text-gray-900">Drafts</Link>
-          <Link href="/crm" className="text-sm font-semibold text-gray-900">CRM</Link>
-          <Link href="/crm/geo" className="text-sm font-semibold text-gray-900">Geo CRM</Link>
-          <Link href="/crm/accounts" className="text-sm font-semibold text-gray-900">Accounts</Link>
-          <Link href="/posts" className="text-sm font-semibold text-gray-900">Posts</Link>
-          <Link href="/analytics" className="text-sm font-semibold text-gray-900">Analytics</Link>
-          <Link href="/audit" className="text-sm font-semibold text-gray-900">Audit</Link>
-        </nav>
-        <span className="text-xs text-gray-500">{user?.email}</span>
-      </header>
-      <main className="mx-auto max-w-5xl p-6">{children}</main>
+    <div className="shell">
+      <Topbar email={user?.email} />
+      <Sidebar modules={[...role.modules]} />
+      <main className="shell-main">{children}</main>
     </div>
-  );
+  )
 }
