@@ -5,6 +5,7 @@
   "framework": "nextjs",
   "crons": [
     { "path": "/api/admin/psib-match", "schedule": "0 8 * * *" },
-    { "path": "/api/admin/geo-match", "schedule": "0 10 * * *" }
+    { "path": "/api/admin/geo-match", "schedule": "0 10 * * *" },
+    { "path": "/api/marketing/score/cron", "schedule": "0 6 * * *" }
   ]
 }

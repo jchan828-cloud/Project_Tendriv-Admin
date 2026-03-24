@@ -12,6 +12,10 @@ export default async function DashboardLayout({ children }: { children: React.Re
           <Link href="/drafts" className="text-sm font-semibold text-gray-900">Drafts</Link>
           <Link href="/crm" className="text-sm font-semibold text-gray-900">CRM</Link>
           <Link href="/crm/geo" className="text-sm font-semibold text-gray-900">Geo CRM</Link>
+          <Link href="/crm/accounts" className="text-sm font-semibold text-gray-900">Accounts</Link>
+          <Link href="/posts" className="text-sm font-semibold text-gray-900">Posts</Link>
+          <Link href="/analytics" className="text-sm font-semibold text-gray-900">Analytics</Link>
+          <Link href="/audit" className="text-sm font-semibold text-gray-900">Audit</Link>
         </nav>
         <span className="text-xs text-gray-500">{user?.email}</span>
       </header>

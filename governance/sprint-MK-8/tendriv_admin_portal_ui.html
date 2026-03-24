@@ -1,0 +1,687 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --jade:#00C896;--jade-dim:#009E77;--jade-pale:#E0FBF4;--jade-10:rgba(0,200,150,0.10);--jade-20:rgba(0,200,150,0.20);
+  --ink:#0A0C10;--ink-90:#0F1218;--ink-80:#161B24;--ink-60:#2A3344;--ink-40:#4A5668;--ink-20:#8A97A8;--ink-10:#C4CBD4;--ink-05:#EDF0F3;--white:#FAFBFC;
+  --sovereign:#FF4D3D;--sovereign-pale:rgba(255,77,61,0.08);--sovereign-border:rgba(255,77,61,0.20);
+  --green:#10B981;--green-bg:rgba(16,185,129,0.08);
+  --amber:#F59E0B;--amber-bg:rgba(245,158,11,0.08);
+  --blue:#3B82F6;--blue-bg:rgba(59,130,246,0.08);
+  --purple:#8B5CF6;--purple-bg:rgba(139,92,246,0.08);
+  --surface-root:var(--white);--surface-sidebar:var(--ink-05);--surface-card:var(--white);
+  --border:var(--ink-10);--border-subtle:var(--ink-05);
+  --text-heading:var(--ink);--text-body:var(--ink-60);--text-muted:var(--ink-40);--text-label:var(--ink-20);
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:13px;background:var(--ink-05);color:var(--text-body)}
+.shell{display:grid;grid-template-columns:200px 1fr;grid-template-rows:44px 1fr;height:740px;border:0.5px solid var(--border);border-radius:10px;overflow:hidden;background:var(--surface-root)}
+.topbar{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;padding:0 16px;border-bottom:0.5px solid var(--border);background:var(--surface-root)}
+.wordmark{font-size:14px;font-weight:700;color:var(--jade-dim);letter-spacing:-0.02em}
+.topbar-right{display:flex;align-items:center;gap:12px}
+.topbar-email{font-size:11px;color:var(--text-label);font-family:monospace}
+.topbar-sov{font-size:9px;letter-spacing:0.12em;text-transform:uppercase;background:var(--jade-pale);color:var(--jade-dim);padding:2px 7px;border-radius:3px}
+.sidebar{background:var(--surface-sidebar);border-right:0.5px solid var(--border);padding:12px 8px;display:flex;flex-direction:column;gap:2px;overflow-y:auto}
+.nav-section{font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--text-label);padding:10px 8px 4px;font-family:monospace}
+.nav-item{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:5px;cursor:pointer;font-size:12px;color:var(--text-muted);transition:background 0.1s}
+.nav-item:hover{background:var(--border-subtle);color:var(--text-body)}
+.nav-item.active{background:var(--jade-pale);color:var(--jade-dim);font-weight:500}
+.nav-dot{width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0;opacity:0.6}
+.nav-badge{margin-left:auto;font-size:9px;background:var(--amber-bg);color:var(--amber);padding:1px 5px;border-radius:3px;font-family:monospace}
+.main{overflow:hidden;display:flex;flex-direction:column}
+.page{display:none;flex-direction:column;height:100%;overflow:hidden}
+.page.active{display:flex}
+.page-header{display:flex;align-items:center;justify-content:space-between;padding:14px 20px 12px;border-bottom:0.5px solid var(--border);flex-shrink:0}
+.page-title{font-size:16px;font-weight:600;color:var(--text-heading);letter-spacing:-0.01em}
+.page-actions{display:flex;gap:8px;align-items:center}
+.btn{font-size:12px;font-weight:500;padding:6px 13px;border-radius:6px;border:none;cursor:pointer;transition:0.12s}
+.btn-primary{background:var(--jade);color:#fff}
+.btn-primary:hover{background:var(--jade-dim)}
+.btn-secondary{background:transparent;color:var(--text-body);border:0.5px solid var(--border)}
+.btn-secondary:hover{background:var(--ink-05)}
+.badge{display:inline-flex;align-items:center;font-size:9px;letter-spacing:0.08em;text-transform:uppercase;padding:2px 6px;border-radius:3px;font-family:monospace;font-weight:500}
+.badge-jade{background:var(--jade-pale);color:var(--jade-dim)}
+.badge-success{background:var(--green-bg);color:var(--green)}
+.badge-warning{background:var(--amber-bg);color:var(--amber)}
+.badge-neutral{background:var(--ink-05);color:var(--text-muted);border:0.5px solid var(--border)}
+.badge-purple{background:var(--purple-bg);color:var(--purple)}
+.badge-blue{background:var(--blue-bg);color:var(--blue)}
+.badge-sovereign{background:var(--sovereign-pale);color:var(--sovereign);border:0.5px solid var(--sovereign-border)}
+.scroll{overflow-y:auto;flex:1;padding:16px 20px}
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px}
+.stat-card{background:var(--ink-05);border-radius:7px;padding:12px 14px}
+.stat-label{font-size:10px;color:var(--text-label);text-transform:uppercase;letter-spacing:0.12em;font-family:monospace;margin-bottom:6px}
+.stat-val{font-size:20px;font-weight:600;color:var(--text-heading);font-family:monospace;letter-spacing:-0.02em}
+.stat-sub{font-size:11px;color:var(--text-muted);margin-top:2px}
+.stat-up{color:var(--green);font-size:11px}
+.card{background:var(--surface-card);border:0.5px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:12px}
+.card-head{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:0.5px solid var(--border-subtle)}
+.card-title{font-size:11px;font-weight:500;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.12em;font-family:monospace}
+.table{width:100%;border-collapse:collapse;font-size:12px}
+.table th{text-align:left;padding:8px 12px;font-size:10px;color:var(--text-label);font-weight:500;letter-spacing:0.1em;text-transform:uppercase;font-family:monospace;border-bottom:0.5px solid var(--border)}
+.table td{padding:9px 12px;border-bottom:0.5px solid var(--border-subtle);color:var(--text-body);vertical-align:middle}
+.table tr:last-child td{border-bottom:none}
+.table tr:hover td{background:var(--ink-05)}
+.post-title{font-weight:500;color:var(--text-heading);font-size:12px}
+.post-kw{font-size:11px;color:var(--text-muted);font-family:monospace}
+.filter-bar{display:flex;gap:6px;padding:12px 20px;border-bottom:0.5px solid var(--border);flex-shrink:0;align-items:center}
+.filter-pill{font-size:11px;padding:4px 10px;border-radius:20px;border:0.5px solid var(--border);cursor:pointer;color:var(--text-muted);background:transparent;font-family:monospace;transition:0.1s}
+.filter-pill.on{background:var(--jade-pale);color:var(--jade-dim);border-color:var(--jade)}
+.split{display:grid;grid-template-columns:1fr 340px;gap:0;height:100%;overflow:hidden}
+.editor-pane{border-right:0.5px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.editor-toolbar{display:flex;align-items:center;gap:6px;padding:8px 12px;border-bottom:0.5px solid var(--border);flex-shrink:0}
+.toolbar-btn{font-size:10px;padding:3px 7px;border-radius:4px;border:0.5px solid var(--border);background:transparent;cursor:pointer;color:var(--text-muted);font-family:monospace}
+.editor-body{flex:1;overflow-y:auto;padding:16px}
+.editor-text{width:100%;height:100%;font-family:monospace;font-size:12px;line-height:1.7;color:var(--text-body);background:transparent;border:none;outline:none;resize:none}
+.fm-pane{overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:12px}
+.fm-section{font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:var(--text-label);font-family:monospace;display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.fm-section::after{content:'';flex:1;height:0.5px;background:var(--border)}
+.field{display:flex;flex-direction:column;gap:4px}
+.field label{font-size:11px;color:var(--text-muted);font-weight:500}
+.field input,.field select,.field textarea{font-size:12px;padding:6px 9px;border:0.5px solid var(--border);border-radius:5px;background:var(--surface-root);color:var(--text-body);font-family:inherit;outline:none;width:100%}
+.field input:focus,.field select:focus{border-color:var(--jade)}
+.char-count{font-size:10px;color:var(--text-label);text-align:right;font-family:monospace}
+.char-count.over{color:var(--sovereign)}
+.score-bar{height:4px;border-radius:2px;background:var(--border);overflow:hidden;margin-top:4px}
+.score-fill{height:100%;border-radius:2px;background:var(--jade);transition:width 0.3s}
+.kanban{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:16px 20px;overflow-x:auto;flex:1}
+.kanban-col{background:var(--ink-05);border-radius:7px;padding:10px;display:flex;flex-direction:column;gap:6px;min-height:200px}
+.kanban-col-head{font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-label);font-family:monospace;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between}
+.kanban-col-count{background:var(--surface-root);border:0.5px solid var(--border);border-radius:3px;padding:1px 5px;font-size:9px;color:var(--text-muted)}
+.k-card{background:var(--surface-card);border:0.5px solid var(--border);border-radius:6px;padding:9px 10px;cursor:pointer}
+.k-card:hover{border-color:var(--jade);background:var(--jade-pale)}
+.k-card-title{font-size:11px;font-weight:500;color:var(--text-heading);margin-bottom:5px;line-height:1.4}
+.k-card-meta{display:flex;gap:4px;flex-wrap:wrap;margin-top:4px}
+.k-card-foot{display:flex;align-items:center;justify-content:space-between;margin-top:6px;font-size:10px;color:var(--text-label);font-family:monospace}
+.timeline-item{display:flex;gap:10px;padding:8px 0;border-bottom:0.5px solid var(--border-subtle)}
+.timeline-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:4px}
+.timeline-dot.sent{background:var(--blue)}
+.timeline-dot.opened{background:var(--green)}
+.timeline-dot.gate{background:var(--jade)}
+.timeline-dot.score{background:var(--purple)}
+.timeline-content{flex:1}
+.timeline-label{font-size:11px;font-weight:500;color:var(--text-body)}
+.timeline-time{font-size:10px;color:var(--text-label);font-family:monospace}
+.funnel-stage{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:0.5px solid var(--border-subtle)}
+.funnel-bar-wrap{flex:1;height:20px;background:var(--ink-05);border-radius:4px;overflow:hidden}
+.funnel-bar{height:100%;border-radius:4px;background:var(--jade);opacity:0.8}
+.funnel-label{font-size:11px;font-weight:500;color:var(--text-body);width:130px;flex-shrink:0}
+.funnel-count{font-size:12px;font-weight:600;color:var(--text-heading);font-family:monospace;width:50px;text-align:right;flex-shrink:0}
+.funnel-rate{font-size:10px;color:var(--text-muted);width:44px;text-align:right;font-family:monospace;flex-shrink:0}
+.crm-split{display:grid;grid-template-columns:1fr 280px;height:100%;overflow:hidden}
+.crm-main{overflow-y:auto;padding:0}
+.crm-aside{border-left:0.5px solid var(--border);overflow-y:auto;padding:14px}
+.contact-row{display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:0.5px solid var(--border-subtle);cursor:pointer}
+.contact-row:hover{background:var(--ink-05)}
+.avatar{width:32px;height:32px;border-radius:50%;background:var(--jade-pale);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:var(--jade-dim);flex-shrink:0;font-family:monospace}
+.contact-name{font-size:12px;font-weight:500;color:var(--text-heading)}
+.contact-org{font-size:11px;color:var(--text-muted)}
+.contact-score{font-size:13px;font-weight:600;font-family:monospace}
+.score-hi{color:var(--green)}
+.score-mid{color:var(--amber)}
+.score-lo{color:var(--sovereign)}
+.audit-row{display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:0.5px solid var(--border-subtle);font-size:11px}
+.audit-event{font-family:monospace;font-size:10px;background:var(--ink-05);padding:2px 6px;border-radius:3px;color:var(--text-muted);flex-shrink:0}
+.tab-bar{display:flex;gap:0;border-bottom:0.5px solid var(--border);padding:0 20px;flex-shrink:0}
+.tab{font-size:12px;padding:9px 14px;cursor:pointer;color:var(--text-muted);border-bottom:2px solid transparent;margin-bottom:-0.5px}
+.tab:hover{color:var(--text-body)}
+.tab.on{color:var(--jade-dim);border-bottom-color:var(--jade);font-weight:500}
+</style>
+
+<div class="shell">
+  <div class="topbar">
+    <div style="display:flex;align-items:center;gap:16px">
+      <span class="wordmark">tendriv</span>
+      <span style="font-size:10px;color:var(--text-label);font-family:monospace">marketing portal</span>
+    </div>
+    <div class="topbar-right">
+      <span class="topbar-sov">ca-central-1</span>
+      <span class="topbar-email">admin@tendriv.ca</span>
+    </div>
+  </div>
+
+  <div class="sidebar">
+    <div class="nav-section">Content</div>
+    <div class="nav-item active" onclick="show('posts')">
+      <span class="nav-dot"></span> Blog posts
+      <span class="nav-badge">3</span>
+    </div>
+    <div class="nav-item" onclick="show('editor')">
+      <span class="nav-dot"></span> New post
+    </div>
+    <div class="nav-item" onclick="show('calendar')">
+      <span class="nav-dot"></span> Calendar
+    </div>
+
+    <div class="nav-section">Analytics</div>
+    <div class="nav-item" onclick="show('analytics')">
+      <span class="nav-dot"></span> Post performance
+    </div>
+    <div class="nav-item" onclick="show('funnel')">
+      <span class="nav-dot"></span> Funnel
+    </div>
+    <div class="nav-item" onclick="show('utms')">
+      <span class="nav-dot"></span> UTM builder
+    </div>
+
+    <div class="nav-section">CRM</div>
+    <div class="nav-item" onclick="show('crm')">
+      <span class="nav-dot"></span> Contacts
+    </div>
+    <div class="nav-item" onclick="show('accounts')">
+      <span class="nav-dot"></span> Accounts
+    </div>
+
+    <div class="nav-section">System</div>
+    <div class="nav-item" onclick="show('audit')">
+      <span class="nav-dot"></span> Audit log
+    </div>
+  </div>
+
+  <div class="main">
+
+    <!-- POSTS LIST -->
+    <div class="page active" id="page-posts">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Blog posts</div>
+        </div>
+        <div class="page-actions">
+          <button class="btn btn-secondary" onclick="show('calendar')">Calendar view</button>
+          <button class="btn btn-primary" onclick="show('editor')">+ New post</button>
+        </div>
+      </div>
+      <div class="filter-bar">
+        <span style="font-size:10px;color:var(--text-label);font-family:monospace;margin-right:4px">Status</span>
+        <button class="filter-pill on">All</button>
+        <button class="filter-pill">Draft</button>
+        <button class="filter-pill">Review</button>
+        <button class="filter-pill">Published</button>
+        <span style="margin-left:12px;font-size:10px;color:var(--text-label);font-family:monospace">Stage</span>
+        <button class="filter-pill on">All</button>
+        <button class="filter-pill">Awareness</button>
+        <button class="filter-pill">Decision</button>
+      </div>
+      <div class="scroll" style="padding:0">
+        <table class="table" style="width:100%">
+          <thead>
+            <tr>
+              <th style="padding-left:20px">Title</th>
+              <th>Status</th>
+              <th>Stage</th>
+              <th>Keyword</th>
+              <th>Words</th>
+              <th>Score</th>
+              <th>Updated</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr onclick="show('editor')" style="cursor:pointer">
+              <td style="padding-left:20px"><div class="post-title">How to respond to a PSIB tender</div><div class="post-kw">step-by-step guide</div></td>
+              <td><span class="badge badge-jade">Published</span></td>
+              <td><span class="badge badge-blue">Decision</span></td>
+              <td><span style="font-family:monospace;font-size:11px">psib tender response</span></td>
+              <td><span style="font-family:monospace;font-size:12px">1,840</span></td>
+              <td><span class="badge badge-success">82</span></td>
+              <td style="color:var(--text-muted);font-family:monospace;font-size:11px">2d ago</td>
+            </tr>
+            <tr>
+              <td style="padding-left:20px"><div class="post-title">Federal procurement set-asides explained</div><div class="post-kw">awareness guide</div></td>
+              <td><span class="badge badge-warning">Review</span></td>
+              <td><span class="badge badge-neutral">Awareness</span></td>
+              <td><span style="font-family:monospace;font-size:11px">government set-asides</span></td>
+              <td><span style="font-family:monospace;font-size:12px">2,210</span></td>
+              <td><span class="badge badge-warning">54</span></td>
+              <td style="color:var(--text-muted);font-family:monospace;font-size:11px">5h ago</td>
+            </tr>
+            <tr>
+              <td style="padding-left:20px"><div class="post-title">UNSPSC codes for Indigenous businesses</div><div class="post-kw">category guide</div></td>
+              <td><span class="badge badge-neutral">Draft</span></td>
+              <td><span class="badge badge-neutral">Awareness</span></td>
+              <td><span style="font-family:monospace;font-size:11px">UNSPSC categories</span></td>
+              <td><span style="font-family:monospace;font-size:12px">640</span></td>
+              <td><span style="font-family:monospace;font-size:12px;color:var(--text-muted)">—</span></td>
+              <td style="color:var(--text-muted);font-family:monospace;font-size:11px">today</td>
+            </tr>
+            <tr>
+              <td style="padding-left:20px"><div class="post-title">Bid-Master vs. manual procurement tracking</div><div class="post-kw">comparison</div></td>
+              <td><span class="badge badge-jade">Published</span></td>
+              <td><span class="badge badge-blue">Decision</span></td>
+              <td><span style="font-family:monospace;font-size:11px">procurement software</span></td>
+              <td><span style="font-family:monospace;font-size:12px">1,490</span></td>
+              <td><span class="badge badge-success">91</span></td>
+              <td style="color:var(--text-muted);font-family:monospace;font-size:11px">1w ago</td>
+            </tr>
+            <tr>
+              <td style="padding-left:20px"><div class="post-title">SOC2 compliance for procurement SaaS</div><div class="post-kw">enterprise guide</div></td>
+              <td><span class="badge badge-purple">Approved</span></td>
+              <td><span class="badge badge-blue">Decision</span></td>
+              <td><span style="font-family:monospace;font-size:11px">soc2 procurement saas</span></td>
+              <td><span style="font-family:monospace;font-size:12px">1,920</span></td>
+              <td><span class="badge badge-success">76</span></td>
+              <td style="color:var(--text-muted);font-family:monospace;font-size:11px">3d ago</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- EDITOR -->
+    <div class="page" id="page-editor">
+      <div class="page-header">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="page-title">How to respond to a PSIB tender</div>
+          <span class="badge badge-jade">Published</span>
+        </div>
+        <div class="page-actions">
+          <span style="font-size:11px;color:var(--jade-dim);font-family:monospace">Saved 12s ago</span>
+          <button class="btn btn-secondary">Versions</button>
+          <button class="btn btn-primary" onclick="show('posts')">Publish</button>
+        </div>
+      </div>
+      <div class="split">
+        <div class="editor-pane">
+          <div class="editor-toolbar">
+            <button class="toolbar-btn">H1</button>
+            <button class="toolbar-btn">H2</button>
+            <button class="toolbar-btn">B</button>
+            <button class="toolbar-btn">I</button>
+            <button class="toolbar-btn">Link</button>
+            <button class="toolbar-btn">Code</button>
+            <div style="margin-left:auto;font-size:10px;color:var(--text-label);font-family:monospace">1,840 words · 9 min read</div>
+          </div>
+          <div class="editor-body">
+            <textarea class="editor-text" spellcheck="false" style="min-height:480px"># How to respond to a PSIB tender
+
+The Procurement Strategy for Indigenous Business (PSIB) sets aside federal contracts exclusively for Indigenous-owned companies. When a tender is flagged as PSIB set-aside, only eligible businesses can submit bids.
+
+## Step 1 — Verify your eligibility
+
+Before investing time in a bid, confirm your business is registered in the Indigenous Business Directory (IBD) with the correct UNSPSC category codes that match the tender scope.
+
+## Step 2 — Download the solicitation documents
+
+Visit CanadaBuys and download the full solicitation package. Pay close attention to:
+
+- **Mandatory requirements** — technical and financial thresholds
+- **Evaluation criteria** — price vs. technical weighting
+- **Submission deadline** — PSIB tenders often have shorter windows
+
+## Step 3 — Prepare your technical proposal
+
+Your technical proposal must address each evaluation criterion point-by-point. Use the same language as the solicitation — evaluators score against the criteria verbatim.
+
+> Tendriv Bid-Master auto-extracts evaluation criteria and creates a structured response template in under 60 seconds.</textarea>
+          </div>
+        </div>
+        <div class="fm-pane">
+          <div class="fm-section">SEO</div>
+          <div class="field">
+            <label>Target keyword</label>
+            <input type="text" value="psib tender response">
+          </div>
+          <div class="field">
+            <label>Meta description <span class="char-count" id="mc">142 / 160</span></label>
+            <textarea rows="2" style="font-size:12px;padding:6px 9px;border:0.5px solid var(--border);border-radius:5px;background:var(--surface-root);color:var(--text-body);font-family:inherit;width:100%;outline:none;resize:none">A step-by-step guide for Indigenous businesses on how to respond to PSIB set-aside federal tenders on CanadaBuys.</textarea>
+          </div>
+          <div class="field">
+            <label>Canonical URL</label>
+            <input type="text" value="/blog/psib-tender-response">
+          </div>
+          <div class="fm-section">Classification</div>
+          <div class="field">
+            <label>Buyer stage</label>
+            <select><option>Decision</option><option>Awareness</option><option>Consideration</option></select>
+          </div>
+          <div class="field">
+            <label>Content type</label>
+            <select><option>Guide</option><option>Blog</option><option>Case study</option><option>Whitepaper</option></select>
+          </div>
+          <div class="fm-section">Gate</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0">
+            <span style="font-size:12px;color:var(--text-body)">Gated content</span>
+            <div style="width:32px;height:18px;background:var(--jade);border-radius:9px;position:relative;cursor:pointer">
+              <div style="position:absolute;right:2px;top:2px;width:14px;height:14px;background:#fff;border-radius:50%"></div>
+            </div>
+          </div>
+          <div class="field">
+            <label>CTA label</label>
+            <input type="text" value="Download the full guide">
+          </div>
+          <div style="background:var(--green-bg);border-radius:5px;padding:8px 10px;font-size:11px;color:var(--green)">
+            47 gate submissions · 3.2% conversion
+          </div>
+          <div class="fm-section">JSON-LD</div>
+          <div style="background:var(--ink-05);border-radius:5px;padding:8px 10px;font-family:monospace;font-size:10px;color:var(--text-muted);line-height:1.6">
+            {"@type":"HowTo",<br>"name":"How to respond...",<br>"step":[...5 steps]}<br><span style="color:var(--jade-dim)">▸ inferred: HowTo</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CALENDAR / KANBAN -->
+    <div class="page" id="page-calendar">
+      <div class="page-header">
+        <div class="page-title">Content calendar</div>
+        <div class="page-actions">
+          <button class="btn btn-secondary" onclick="show('posts')">List view</button>
+          <button class="btn btn-primary" onclick="show('editor')">+ New post</button>
+        </div>
+      </div>
+      <div style="display:flex;gap:6px;padding:10px 20px;border-bottom:0.5px solid var(--border);flex-shrink:0;font-size:11px;color:var(--text-muted)">
+        <span style="background:var(--jade-pale);padding:3px 9px;border-radius:12px;color:var(--jade-dim);font-family:monospace">Scheduled: Apr 3 — "UNSPSC guide" · Apr 10 — "SOC2 for procurement"</span>
+      </div>
+      <div class="kanban">
+        <div class="kanban-col">
+          <div class="kanban-col-head">Draft <span class="kanban-col-count">2</span></div>
+          <div class="k-card">
+            <div class="k-card-title">UNSPSC codes for Indigenous businesses</div>
+            <div class="k-card-meta"><span class="badge badge-neutral">Awareness</span><span class="badge badge-neutral">Guide</span></div>
+            <div class="k-card-foot"><span>unspsc categories</span><span style="color:var(--text-label)">today</span></div>
+          </div>
+          <div class="k-card">
+            <div class="k-card-title">Procurement data residency requirements</div>
+            <div class="k-card-meta"><span class="badge badge-blue">Decision</span><span class="badge badge-neutral">Blog</span></div>
+            <div class="k-card-foot"><span>data sovereignty</span><span style="color:var(--text-label)">yesterday</span></div>
+          </div>
+        </div>
+        <div class="kanban-col">
+          <div class="kanban-col-head">Review <span class="kanban-col-count">1</span></div>
+          <div class="k-card" style="border-color:var(--amber)">
+            <div class="k-card-title">Federal procurement set-asides explained</div>
+            <div class="k-card-meta"><span class="badge badge-neutral">Awareness</span><span class="badge badge-neutral">Guide</span></div>
+            <div class="k-card-foot"><span>government set-asides</span><span style="color:var(--amber);font-family:monospace;font-size:10px">3 days</span></div>
+          </div>
+        </div>
+        <div class="kanban-col">
+          <div class="kanban-col-head">Approved <span class="kanban-col-count">1</span></div>
+          <div class="k-card" style="border-color:var(--purple)">
+            <div class="k-card-title">SOC2 compliance for procurement SaaS</div>
+            <div class="k-card-meta"><span class="badge badge-blue">Decision</span><span class="badge badge-purple">Approved</span></div>
+            <div class="k-card-foot"><span>soc2 procurement saas</span><span style="color:var(--text-label)">Apr 10</span></div>
+          </div>
+        </div>
+        <div class="kanban-col">
+          <div class="kanban-col-head">Published <span class="kanban-col-count">2</span></div>
+          <div class="k-card" onclick="show('editor')">
+            <div class="k-card-title">How to respond to a PSIB tender</div>
+            <div class="k-card-meta"><span class="badge badge-blue">Decision</span><span class="badge badge-jade">Gated</span></div>
+            <div class="k-card-foot"><span style="color:var(--green);font-family:monospace;font-size:10px">82 score</span><span>Mar 22</span></div>
+          </div>
+          <div class="k-card">
+            <div class="k-card-title">Bid-Master vs. manual procurement tracking</div>
+            <div class="k-card-meta"><span class="badge badge-blue">Decision</span><span class="badge badge-jade">Published</span></div>
+            <div class="k-card-foot"><span style="color:var(--green);font-family:monospace;font-size:10px">91 score</span><span>Mar 17</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ANALYTICS -->
+    <div class="page" id="page-analytics">
+      <div class="page-header">
+        <div class="page-title">Post performance</div>
+        <div class="page-actions">
+          <button class="filter-pill on">7d</button>
+          <button class="filter-pill">30d</button>
+          <button class="filter-pill">All</button>
+        </div>
+      </div>
+      <div class="scroll">
+        <div class="stat-grid">
+          <div class="stat-card"><div class="stat-label">Total views</div><div class="stat-val">4,821</div><div class="stat-up">↑ 18% vs prev</div></div>
+          <div class="stat-card"><div class="stat-label">Avg scroll depth</div><div class="stat-val">63%</div><div class="stat-sub">across 5 posts</div></div>
+          <div class="stat-card"><div class="stat-label">Gate conversions</div><div class="stat-val">47</div><div class="stat-up">3.2% rate</div></div>
+          <div class="stat-card"><div class="stat-label">CRM contacts</div><div class="stat-val">31</div><div class="stat-sub">first-touch this period</div></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><span class="card-title">Per-post breakdown</span></div>
+          <table class="table">
+            <thead><tr><th style="padding-left:14px">Post</th><th>Views</th><th>Avg scroll</th><th>CTA clicks</th><th>First-touch</th><th>Last-touch</th><th>Top UTM</th></tr></thead>
+            <tbody>
+              <tr><td style="padding-left:14px"><div style="font-size:11px;font-weight:500;color:var(--text-heading)">How to respond to a PSIB tender</div></td><td style="font-family:monospace">1,940</td><td style="font-family:monospace">74%</td><td style="font-family:monospace">182</td><td><span class="badge badge-success">18</span></td><td><span class="badge badge-jade">9</span></td><td style="font-family:monospace;font-size:10px">cyberimpact</td></tr>
+              <tr><td style="padding-left:14px"><div style="font-size:11px;font-weight:500;color:var(--text-heading)">Bid-Master vs. manual tracking</div></td><td style="font-family:monospace">1,490</td><td style="font-family:monospace">68%</td><td style="font-family:monospace">94</td><td><span class="badge badge-success">9</span></td><td><span class="badge badge-jade">14</span></td><td style="font-family:monospace;font-size:10px">linkedin</td></tr>
+              <tr><td style="padding-left:14px"><div style="font-size:11px;font-weight:500;color:var(--text-heading)">SOC2 compliance for procurement SaaS</div></td><td style="font-family:monospace">820</td><td style="font-family:monospace">51%</td><td style="font-family:monospace">41</td><td><span class="badge badge-success">4</span></td><td><span class="badge badge-jade">6</span></td><td style="font-family:monospace;font-size:10px">organic</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- FUNNEL -->
+    <div class="page" id="page-funnel">
+      <div class="page-header">
+        <div class="page-title">Content → contract funnel</div>
+        <div class="page-actions">
+          <button class="filter-pill on">30d</button>
+          <button class="filter-pill">90d</button>
+          <button class="filter-pill">12m</button>
+        </div>
+      </div>
+      <div class="scroll">
+        <div class="stat-grid" style="grid-template-columns:repeat(4,1fr)">
+          <div class="stat-card"><div class="stat-label">Content readers</div><div class="stat-val">4,821</div><div class="stat-sub">unique sessions</div></div>
+          <div class="stat-card"><div class="stat-label">Identified leads</div><div class="stat-val">31</div><div class="stat-sub">0.6% of readers</div></div>
+          <div class="stat-card"><div class="stat-label">Demo requests</div><div class="stat-val">8</div><div class="stat-sub">26% of leads</div></div>
+          <div class="stat-card"><div class="stat-label">Converted</div><div class="stat-val">3</div><div class="stat-sub">38% of demos</div></div>
+        </div>
+        <div class="card" style="margin-top:4px">
+          <div class="card-head"><span class="card-title">Stage breakdown</span></div>
+          <div style="padding:14px">
+            <div class="funnel-stage"><span class="funnel-label">Content readers</span><div class="funnel-bar-wrap"><div class="funnel-bar" style="width:100%;background:var(--jade)"></div></div><span class="funnel-count">4,821</span><span class="funnel-rate">100%</span></div>
+            <div class="funnel-stage"><span class="funnel-label">Identified leads</span><div class="funnel-bar-wrap"><div class="funnel-bar" style="width:0.6%;background:var(--blue)"></div></div><span class="funnel-count">31</span><span class="funnel-rate">0.6%</span></div>
+            <div class="funnel-stage"><span class="funnel-label">Demo requests</span><div class="funnel-bar-wrap"><div class="funnel-bar" style="width:26%;background:var(--amber)"></div></div><span class="funnel-count">8</span><span class="funnel-rate">26%</span></div>
+            <div class="funnel-stage" style="border-bottom:none"><span class="funnel-label">Converted</span><div class="funnel-bar-wrap"><div class="funnel-bar" style="width:38%;background:var(--green)"></div></div><span class="funnel-count">3</span><span class="funnel-rate">38%</span></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head"><span class="card-title">Top posts by lead attribution</span></div>
+          <table class="table">
+            <thead><tr><th style="padding-left:14px">Post</th><th>First-touch</th><th>Last-touch</th><th>Assists</th></tr></thead>
+            <tbody>
+              <tr><td style="padding-left:14px;font-size:11px;font-weight:500;color:var(--text-heading)">How to respond to a PSIB tender</td><td><span class="badge badge-success">18</span></td><td><span class="badge badge-jade">9</span></td><td style="font-family:monospace">24</td></tr>
+              <tr><td style="padding-left:14px;font-size:11px;font-weight:500;color:var(--text-heading)">Bid-Master vs. manual tracking</td><td><span class="badge badge-success">9</span></td><td><span class="badge badge-jade">14</span></td><td style="font-family:monospace">12</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- UTM -->
+    <div class="page" id="page-utms">
+      <div class="page-header"><div class="page-title">UTM builder</div></div>
+      <div class="scroll">
+        <div class="card">
+          <div class="card-head"><span class="card-title">Build a campaign URL</span></div>
+          <div style="padding:14px;display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <div class="field"><label>Source</label><input type="text" value="cyberimpact"></div>
+            <div class="field"><label>Medium</label><input type="text" value="email"></div>
+            <div class="field"><label>Campaign</label><input type="text" value="psib-apr-2026"></div>
+            <div class="field"><label>Content</label><input type="text" value="cta-bottom"></div>
+            <div class="field" style="grid-column:1/-1"><label>Destination URL</label><input type="text" value="https://tendriv.ca/blog/psib-tender-response"></div>
+            <div style="grid-column:1/-1;background:var(--ink-05);border-radius:5px;padding:10px;font-family:monospace;font-size:11px;color:var(--jade-dim);word-break:break-all">https://tendriv.ca/blog/psib-tender-response?utm_source=cyberimpact&utm_medium=email&utm_campaign=psib-apr-2026&utm_content=cta-bottom<br><span style="color:var(--text-label)">Short code: t.ca/bx7K2p</span></div>
+          </div>
+          <div style="display:flex;gap:8px;padding:0 14px 14px">
+            <button class="btn btn-primary">Save campaign</button>
+            <button class="btn btn-secondary">Copy URL</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head"><span class="card-title">Recent campaigns</span></div>
+          <table class="table">
+            <thead><tr><th style="padding-left:14px">Campaign</th><th>Source</th><th>Clicks</th><th>Resolved</th><th>Created</th></tr></thead>
+            <tbody>
+              <tr><td style="padding-left:14px;font-family:monospace;font-size:11px">psib-mar-2026</td><td><span class="badge badge-neutral">cyberimpact</span></td><td style="font-family:monospace">341</td><td><span class="badge badge-success">12 contacts</span></td><td style="font-family:monospace;font-size:10px;color:var(--text-muted)">Mar 10</td></tr>
+              <tr><td style="padding-left:14px;font-family:monospace;font-size:11px">linkedin-q1-decision</td><td><span class="badge badge-blue">linkedin</span></td><td style="font-family:monospace">184</td><td><span class="badge badge-success">7 contacts</span></td><td style="font-family:monospace;font-size:10px;color:var(--text-muted)">Mar 1</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- CRM -->
+    <div class="page" id="page-crm">
+      <div class="page-header">
+        <div class="page-title">Contacts</div>
+        <div class="page-actions">
+          <button class="filter-pill on">All</button>
+          <button class="filter-pill">PSIB</button>
+          <button class="filter-pill">Geo</button>
+          <button class="filter-pill">Content gate</button>
+        </div>
+      </div>
+      <div class="crm-split">
+        <div class="crm-main">
+          <div class="contact-row">
+            <div class="avatar">NK</div>
+            <div style="flex:1">
+              <div class="contact-name">Nashwa Khalil</div>
+              <div class="contact-org">Indigenous Tech Solutions · BC</div>
+            </div>
+            <div style="display:flex;gap:6px;align-items:center">
+              <span class="badge badge-jade">PSIB</span>
+              <span class="badge badge-success">Contacted</span>
+            </div>
+            <div class="contact-score score-hi" style="width:32px;text-align:right">82</div>
+          </div>
+          <div class="contact-row" style="background:var(--jade-pale)">
+            <div class="avatar">MR</div>
+            <div style="flex:1">
+              <div class="contact-name">Marcus Redcloud</div>
+              <div class="contact-org">Redcloud Consulting · AB</div>
+            </div>
+            <div style="display:flex;gap:6px;align-items:center">
+              <span class="badge badge-jade">PSIB</span>
+              <span class="badge badge-purple">Demo</span>
+            </div>
+            <div class="contact-score score-hi" style="width:32px;text-align:right">91</div>
+          </div>
+          <div class="contact-row">
+            <div class="avatar">SB</div>
+            <div style="flex:1">
+              <div class="contact-name">Sarah Bélanger</div>
+              <div class="contact-org">Dept. of Public Works · ON</div>
+            </div>
+            <div style="display:flex;gap:6px;align-items:center">
+              <span class="badge badge-neutral">Geo</span>
+              <span class="badge badge-neutral">Prospect</span>
+            </div>
+            <div class="contact-score score-mid" style="width:32px;text-align:right">54</div>
+          </div>
+          <div class="contact-row">
+            <div class="avatar">TC</div>
+            <div style="flex:1">
+              <div class="contact-name">Thomas Crane</div>
+              <div class="contact-org">Crown Infrastructure Partners · QC</div>
+            </div>
+            <div style="display:flex;gap:6px;align-items:center">
+              <span class="badge badge-blue">Gate</span>
+              <span class="badge badge-warning">Replied</span>
+            </div>
+            <div class="contact-score score-mid" style="width:32px;text-align:right">67</div>
+          </div>
+        </div>
+        <div class="crm-aside">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+            <div class="avatar" style="width:36px;height:36px">MR</div>
+            <div><div style="font-size:13px;font-weight:600;color:var(--text-heading)">Marcus Redcloud</div><div style="font-size:11px;color:var(--text-muted)">Redcloud Consulting · AB</div></div>
+          </div>
+          <div style="font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-label);font-family:monospace;margin-bottom:8px">Score breakdown</div>
+          <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:12px">
+            <div style="display:flex;justify-content:space-between;font-size:11px"><span>Content engagement</span><span style="font-family:monospace;color:var(--jade-dim)">28/30</span></div>
+            <div class="score-bar"><div class="score-fill" style="width:93%"></div></div>
+            <div style="display:flex;justify-content:space-between;font-size:11px"><span>Email engagement</span><span style="font-family:monospace;color:var(--jade-dim)">23/25</span></div>
+            <div class="score-bar"><div class="score-fill" style="width:92%"></div></div>
+            <div style="display:flex;justify-content:space-between;font-size:11px"><span>Firmographic fit</span><span style="font-family:monospace;color:var(--amber)">21/25</span></div>
+            <div class="score-bar"><div class="score-fill" style="width:84%;background:var(--amber)"></div></div>
+            <div style="display:flex;justify-content:space-between;font-size:11px"><span>Recency</span><span style="font-family:monospace;color:var(--jade-dim)">19/20</span></div>
+            <div class="score-bar"><div class="score-fill" style="width:95%"></div></div>
+          </div>
+          <div style="font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-label);font-family:monospace;margin-bottom:8px">Attribution</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">First touch</div>
+          <div style="font-size:11px;color:var(--text-heading);margin-bottom:8px;font-weight:500">How to respond to a PSIB tender <span style="color:var(--text-label);font-weight:400">· 18d ago</span></div>
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">Last touch</div>
+          <div style="font-size:11px;color:var(--text-heading);margin-bottom:10px;font-weight:500">Bid-Master vs. manual tracking <span style="color:var(--text-label);font-weight:400">· 3d ago</span></div>
+          <div style="font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-label);font-family:monospace;margin-bottom:8px">Activity</div>
+          <div class="timeline-item"><div class="timeline-dot gate"></div><div class="timeline-content"><div class="timeline-label">Gate submit — PSIB guide</div><div class="timeline-time">2026-03-21 09:14</div></div></div>
+          <div class="timeline-item"><div class="timeline-dot opened"></div><div class="timeline-content"><div class="timeline-label">Email opened — step 2</div><div class="timeline-time">2026-03-19 14:32</div></div></div>
+          <div class="timeline-item"><div class="timeline-dot sent"></div><div class="timeline-content"><div class="timeline-label">Email sent — step 1</div><div class="timeline-time">2026-03-15 08:00</div></div></div>
+          <div class="timeline-item"><div class="timeline-dot score"></div><div class="timeline-content"><div class="timeline-label">Score change +12 → 91</div><div class="timeline-time">2026-03-21 03:00</div></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ACCOUNTS -->
+    <div class="page" id="page-accounts">
+      <div class="page-header"><div class="page-title">ABM accounts</div></div>
+      <div class="scroll" style="padding:0">
+        <table class="table">
+          <thead><tr><th style="padding-left:20px">Account</th><th>Type</th><th>Contacts</th><th>Top score</th><th>Pipeline coverage</th><th>Content touches</th></tr></thead>
+          <tbody>
+            <tr><td style="padding-left:20px"><div style="font-weight:500;font-size:12px;color:var(--text-heading)">PSWD — Dept. of Public Works</div><div style="font-size:10px;color:var(--text-muted);font-family:monospace">Ottawa, ON</div></td><td><span class="badge badge-purple">Ministry</span></td><td style="font-family:monospace">3</td><td><span class="badge badge-success">91</span></td><td><div style="display:flex;gap:3px"><span class="badge badge-neutral">Prospect</span><span class="badge badge-purple">Demo</span></div></td><td style="font-family:monospace">14</td></tr>
+            <tr><td style="padding-left:20px"><div style="font-weight:500;font-size:12px;color:var(--text-heading)">Crown Infrastructure Partners</div><div style="font-size:10px;color:var(--text-muted);font-family:monospace">Montreal, QC</div></td><td><span class="badge badge-blue">Crown corp</span></td><td style="font-family:monospace">2</td><td><span class="badge badge-warning">67</span></td><td><div style="display:flex;gap:3px"><span class="badge badge-warning">Replied</span></div></td><td style="font-family:monospace">9</td></tr>
+            <tr><td style="padding-left:20px"><div style="font-weight:500;font-size:12px;color:var(--text-heading)">Indigenous Tech Solutions</div><div style="font-size:10px;color:var(--text-muted);font-family:monospace">Vancouver, BC</div></td><td><span class="badge badge-jade">Indigenous org</span></td><td style="font-family:monospace">1</td><td><span class="badge badge-success">82</span></td><td><div style="display:flex;gap:3px"><span class="badge badge-success">Contacted</span></div></td><td style="font-family:monospace">7</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- AUDIT -->
+    <div class="page" id="page-audit">
+      <div class="page-header">
+        <div class="page-title">Audit log</div>
+        <div class="page-actions">
+          <button class="filter-pill on">All events</button>
+          <button class="filter-pill">Posts</button>
+          <button class="filter-pill">CRM</button>
+          <button class="filter-pill">Gate</button>
+          <span class="badge badge-sovereign">Read-only</span>
+        </div>
+      </div>
+      <div class="scroll" style="padding:0">
+        <table class="table">
+          <thead><tr><th style="padding-left:20px">Event</th><th>Resource</th><th>Actor</th><th>IP hash</th><th>Time</th></tr></thead>
+          <tbody>
+            <tr><td style="padding-left:20px"><span class="badge badge-jade">gate-submission</span></td><td style="font-family:monospace;font-size:11px">post/psib-tender-response</td><td style="font-family:monospace;font-size:11px;color:var(--text-muted)">system</td><td style="font-family:monospace;font-size:10px;color:var(--text-label)">a3f7...91bc</td><td style="font-family:monospace;font-size:10px;color:var(--text-muted)">2026-03-21 09:14</td></tr>
+            <tr><td style="padding-left:20px"><span class="badge badge-purple">score-change-flagged</span></td><td style="font-family:monospace;font-size:11px">contact/marcus-redcloud</td><td style="font-family:monospace;font-size:11px;color:var(--text-muted)">cron</td><td style="font-family:monospace;font-size:10px;color:var(--text-label)">—</td><td style="font-family:monospace;font-size:10px;color:var(--text-muted)">2026-03-21 03:01</td></tr>
+            <tr><td style="padding-left:20px"><span class="badge badge-neutral">post-published</span></td><td style="font-family:monospace;font-size:11px">post/psib-tender-response</td><td style="font-family:monospace;font-size:11px;color:var(--text-muted)">admin@tendriv.ca</td><td style="font-family:monospace;font-size:10px;color:var(--text-label)">b2e1...44ad</td><td style="font-family:monospace;font-size:10px;color:var(--text-muted)">2026-03-22 10:30</td></tr>
+            <tr><td style="padding-left:20px"><span class="badge badge-blue">ai-brief-generated</span></td><td style="font-family:monospace;font-size:11px">post/unspsc-categories</td><td style="font-family:monospace;font-size:11px;color:var(--text-muted)">admin@tendriv.ca</td><td style="font-family:monospace;font-size:10px;color:var(--text-label)">b2e1...44ad</td><td style="font-family:monospace;font-size:10px;color:var(--text-muted)">2026-03-24 11:02</td></tr>
+            <tr><td style="padding-left:20px"><span class="badge badge-warning">utm-created</span></td><td style="font-family:monospace;font-size:11px">utm/psib-apr-2026</td><td style="font-family:monospace;font-size:11px;color:var(--text-muted)">admin@tendriv.ca</td><td style="font-family:monospace;font-size:10px;color:var(--text-label)">b2e1...44ad</td><td style="font-family:monospace;font-size:10px;color:var(--text-muted)">2026-03-24 11:45</td></tr>
+            <tr><td style="padding-left:20px"><span class="badge badge-neutral">post-status-changed</span></td><td style="font-family:monospace;font-size:11px">post/soc2-procurement-saas</td><td style="font-family:monospace;font-size:11px;color:var(--text-muted)">admin@tendriv.ca</td><td style="font-family:monospace;font-size:10px;color:var(--text-label)">b2e1...44ad</td><td style="font-family:monospace;font-size:10px;color:var(--text-muted)">2026-03-23 16:18</td></tr>
+          </tbody>
+        </table>
+        <div style="padding:10px 20px;font-size:11px;color:var(--text-label);font-family:monospace;border-top:0.5px solid var(--border)">Page 1 of 12 · 50 rows per page · 582 total events · immutable — no edit or delete</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+function show(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  const map={posts:0,editor:1,calendar:2,analytics:3,funnel:4,utms:5,crm:6,accounts:7,audit:8};
+  const items=document.querySelectorAll('.nav-item');
+  if(map[id]!==undefined) items[map[id]].classList.add('active');
+  document.querySelectorAll('.filter-pill').forEach(p=>{
+    p.addEventListener('click',function(){
+      this.closest('.filter-bar,.page-actions')?.querySelectorAll('.filter-pill').forEach(x=>x.classList.remove('on'));
+      this.classList.add('on');
+    });
+  });
+}
+document.querySelectorAll('.filter-pill').forEach(p=>{
+  p.addEventListener('click',function(){
+    const bar=this.closest('.filter-bar');
+    if(bar){
+      const group=Array.from(bar.querySelectorAll('.filter-pill'));
+      if(group.includes(this)){
+        const sameGroup=group.slice(0,group.indexOf(this)+1).reverse().find(x=>x.classList.contains('on'));
+        if(sameGroup) sameGroup.classList.remove('on');
+        this.classList.add('on');
+      }
+    }
+  });
+});
+</script>
