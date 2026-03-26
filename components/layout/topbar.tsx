@@ -4,6 +4,7 @@
 
 import { useRouter } from 'next/navigation'
 import { createBrowserClient } from '@supabase/ssr'
+import { GlobalSearch } from './global-search'
 
 interface TopbarProps {
   email: string | undefined
@@ -29,6 +30,7 @@ export function Topbar({ email }: TopbarProps) {
         <span className="topbar-label">marketing portal</span>
       </div>
       <div className="flex items-center gap-3">
+        <GlobalSearch />
         <span className="topbar-region">ca-central-1</span>
         <span className="topbar-email">{email}</span>
         <button onClick={handleLogout} className="topbar-logout">

@@ -5,7 +5,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
-export type ModuleKey = 'content' | 'analytics' | 'crm' | 'system'
+export type ModuleKey = 'content' | 'analytics' | 'crm' | 'sales' | 'system'
 
 interface NavItem {
   label: string
@@ -19,6 +19,11 @@ interface NavSection {
   items: NavItem[]
 }
 
+const topItems: NavItem[] = [
+  { label: 'Dashboard', href: '/' },
+  { label: 'LinkedIn drafts', href: '/drafts' },
+]
+
 const allSections: NavSection[] = [
   {
     key: 'content',
@@ -27,6 +32,7 @@ const allSections: NavSection[] = [
       { label: 'Blog posts', href: '/posts' },
       { label: 'New post', href: '/posts/new' },
       { label: 'Calendar', href: '/posts/calendar' },
+      { label: 'Media library', href: '/media' },
     ],
   },
   {
@@ -44,6 +50,13 @@ const allSections: NavSection[] = [
     items: [
       { label: 'Contacts', href: '/crm' },
       { label: 'Accounts', href: '/crm/accounts' },
+    ],
+  },
+  {
+    key: 'sales',
+    title: 'Sales',
+    items: [
+      { label: 'Pipeline', href: '/sales' },
     ],
   },
   {
@@ -68,15 +81,26 @@ export function Sidebar({ modules }: SidebarProps) {
 
   function isActive(href: string): boolean {
     if (href === pathname) return true
+    if (href === '/' && pathname === '/') return true
     // /posts/new and /posts/[id] should highlight "New post" or "Blog posts"
     if (href === '/posts' && pathname === '/posts') return true
     if (href === '/posts/new' && pathname.startsWith('/posts/') && pathname !== '/posts' && pathname !== '/posts/calendar') return true
-    if (href !== '/posts' && href !== '/posts/new' && pathname.startsWith(href + '/')) return true
+    if (href !== '/' && href !== '/posts' && href !== '/posts/new' && pathname.startsWith(href + '/')) return true
     return false
   }
 
   return (
     <aside className="sidebar">
+      {topItems.map((item) => (
+        <Link
+          key={item.href}
+          href={item.href}
+          className={`nav-item${isActive(item.href) ? ' active' : ''}`}
+        >
+          <span className="nav-dot" />
+          {item.label}
+        </Link>
+      ))}
       {visibleSections.map((section) => (
         <div key={section.key}>
           <div className="nav-section">{section.title}</div>

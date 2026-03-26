@@ -22,6 +22,10 @@ export type AuditEventType =
   | 'post-topics-updated'
   | 'post-version-created'
   | 'post-jsonld-updated'
+  | 'deal-created'
+  | 'deal-updated'
+  | 'deal-deleted'
+  | 'media-uploaded'
 
 export type AuditResourceType =
   | 'post'
@@ -35,6 +39,8 @@ export type AuditResourceType =
   | 'lead-score'
   | 'tag'
   | 'topic'
+  | 'deal'
+  | 'media'
 
 export interface AuditEntry {
   event_type: AuditEventType
