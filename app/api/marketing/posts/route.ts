@@ -6,6 +6,10 @@ import { BlogPostInsertSchema } from '@/lib/types/cms'
 import { appendAuditLog } from '@/lib/audit/log'
 
 export async function GET(request: NextRequest) {
+  const authClient = await createServerSupabaseClient()
+  const { data: { user } } = await authClient.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
   const supabase = await createServiceRoleClient()
   const url = new URL(request.url)
   const page = Math.max(1, parseInt(url.searchParams.get('page') ?? '1', 10) || 1)

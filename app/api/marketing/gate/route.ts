@@ -5,6 +5,7 @@ import { createServiceRoleClient } from '@/lib/supabase/server'
 import { appendAuditLog } from '@/lib/audit/log'
 import { GateSubmitSchema } from '@/lib/types/gate'
 import { sha256 } from '@/lib/utils/hash'
+import { signGateToken } from '@/lib/utils/jwt'
 
 export async function POST(request: NextRequest) {
   const supabase = await createServiceRoleClient()
@@ -36,6 +37,7 @@ export async function POST(request: NextRequest) {
     .from('marketing_events')
     .select('*', { count: 'exact', head: true })
     .eq('event_type', 'gate_submit')
+    .eq('session_id', ipHash)
     .gte('occurred_at', oneHourAgo)
 
   if ((recentCount ?? 0) > 5) {
@@ -126,11 +128,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true, token: null })
   }
 
-  // Simple base64 token (proper JWT requires jsonwebtoken package)
-  const payload = { contact_id: contactId, post_id: source_post_id, exp: Date.now() + 3600_000 }
-  const tokenPayload = Buffer.from(JSON.stringify(payload)).toString('base64url')
-  const tokenHeader = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url')
-  const token = `${tokenHeader}.${tokenPayload}.gate-token`
+  const payload = { contact_id: contactId, post_id: source_post_id, exp: Math.floor(Date.now() / 1000) + 3600 }
+  const token = await signGateToken(payload, jwtSecret)
 
   return NextResponse.json({ success: true, token })
 }

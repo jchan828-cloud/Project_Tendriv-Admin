@@ -14,8 +14,9 @@ type MatchUpsertRow = Pick<OutreachMatch, 'contact_id' | 'notice_id' | 'match_sc
 
 export async function POST(request: NextRequest) {
   /* ── Auth: validate cron secret ─────────────────────────── */
-  const cronHeader = request.headers.get('x-vercel-cron');
-  if (cronHeader !== process.env.CRON_SECRET) {
+  const authHeader = request.headers.get('authorization');
+  const cronSecret = process.env.CRON_SECRET;
+  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 

@@ -88,8 +88,9 @@ const BATCH_SIZE = 500;
 
 export async function POST(request: NextRequest) {
   /* ── Auth: validate cron secret ─────────────────────────── */
-  const cronHeader = request.headers.get('x-vercel-cron');
-  if (cronHeader !== process.env.CRON_SECRET) {
+  const authHeader = request.headers.get('authorization');
+  const cronSecret = process.env.CRON_SECRET;
+  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -152,21 +153,34 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true, matched: 0 });
   }
 
-  /* ── 4. Batch upsert matches ────────────────────────────── */
+  /* ── 4. Batch upsert matches (with retry) ──────────────── */
   let upsertErrors = 0;
+  const MAX_RETRIES = 2;
   for (let i = 0; i < rows.length; i += BATCH_SIZE) {
     const batch = rows.slice(i, i + BATCH_SIZE);
-    const { error } = await service
-      .from('outreach_matches')
-      .upsert(batch, {
-        onConflict: 'contact_id,notice_id',
-        ignoreDuplicates: false,
-      });
+    const batchNum = i / BATCH_SIZE + 1;
+    let success = false;
 
-    if (error) {
-      console.error(`[geo-match] Batch ${i / BATCH_SIZE + 1} failed:`, error.message);
-      upsertErrors++;
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+      const { error } = await service
+        .from('outreach_matches')
+        .upsert(batch, {
+          onConflict: 'contact_id,notice_id',
+          ignoreDuplicates: false,
+        });
+
+      if (!error) {
+        success = true;
+        break;
+      }
+
+      console.error(`[geo-match] Batch ${batchNum} attempt ${attempt + 1} failed:`, error.message);
+      if (attempt < MAX_RETRIES) {
+        await new Promise((resolve) => setTimeout(resolve, 1000 * (attempt + 1)));
+      }
     }
+
+    if (!success) upsertErrors++;
   }
 
   return NextResponse.json({
