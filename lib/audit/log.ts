@@ -26,6 +26,12 @@ export type AuditEventType =
   | 'deal-updated'
   | 'deal-deleted'
   | 'media-uploaded'
+  | 'finance-transaction-created'
+  | 'finance-transaction-updated'
+  | 'finance-transaction-deleted'
+  | 'billing-account-created'
+  | 'billing-account-updated'
+  | 'billing-account-deleted'
 
 export type AuditResourceType =
   | 'post'
@@ -41,6 +47,8 @@ export type AuditResourceType =
   | 'topic'
   | 'deal'
   | 'media'
+  | 'finance'
+  | 'billing'
 
 export interface AuditEntry {
   event_type: AuditEventType
