@@ -64,6 +64,8 @@ const allSections: NavSection[] = [
     title: 'Finance',
     items: [
       { label: 'Overview', href: '/finance' },
+      { label: 'Analytics', href: '/finance/analytics' },
+      { label: 'Customers', href: '/finance/customers' },
       { label: 'Billing accounts', href: '/finance/billing' },
     ],
   },

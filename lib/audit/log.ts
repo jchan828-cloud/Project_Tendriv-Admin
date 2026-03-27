@@ -32,6 +32,9 @@ export type AuditEventType =
   | 'billing-account-created'
   | 'billing-account-updated'
   | 'billing-account-deleted'
+  | 'customer-created'
+  | 'customer-updated'
+  | 'customer-deleted'
 
 export type AuditResourceType =
   | 'post'
@@ -49,6 +52,7 @@ export type AuditResourceType =
   | 'media'
   | 'finance'
   | 'billing'
+  | 'customer'
 
 export interface AuditEntry {
   event_type: AuditEventType
