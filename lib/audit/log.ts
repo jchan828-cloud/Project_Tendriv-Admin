@@ -35,6 +35,8 @@ export type AuditEventType =
   | 'customer-created'
   | 'customer-updated'
   | 'customer-deleted'
+  | 'feedback-submitted'
+  | 'feedback-updated'
 
 export type AuditResourceType =
   | 'post'
@@ -53,6 +55,7 @@ export type AuditResourceType =
   | 'finance'
   | 'billing'
   | 'customer'
+  | 'feedback'
 
 export interface AuditEntry {
   event_type: AuditEventType

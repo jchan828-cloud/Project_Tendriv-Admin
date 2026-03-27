@@ -5,7 +5,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
-export type ModuleKey = 'content' | 'analytics' | 'crm' | 'sales' | 'finance' | 'system'
+export type ModuleKey = 'content' | 'analytics' | 'crm' | 'sales' | 'finance' | 'feedback' | 'system'
 
 interface NavItem {
   label: string
@@ -67,6 +67,13 @@ const allSections: NavSection[] = [
       { label: 'Analytics', href: '/finance/analytics' },
       { label: 'Customers', href: '/finance/customers' },
       { label: 'Billing accounts', href: '/finance/billing' },
+    ],
+  },
+  {
+    key: 'feedback',
+    title: 'Feedback',
+    items: [
+      { label: 'Inbox', href: '/feedback' },
     ],
   },
   {
