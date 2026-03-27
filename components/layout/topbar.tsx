@@ -27,7 +27,7 @@ export function Topbar({ email }: TopbarProps) {
     <div className="topbar">
       <div className="flex items-center gap-4">
         <span className="wordmark">tendriv</span>
-        <span className="topbar-label">marketing portal</span>
+        <span className="topbar-label">admin portal</span>
       </div>
       <div className="flex items-center gap-3">
         <GlobalSearch />

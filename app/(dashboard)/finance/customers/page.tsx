@@ -18,9 +18,9 @@ export default async function CustomersPage() {
   return (
     <div style={{ padding: '28px 32px', maxWidth: 1200 }}>
       <div style={{ marginBottom: 24 }}>
-        <h1 className="text-heading-xl" style={{ marginBottom: 4 }}>Customers</h1>
+        <h1 className="text-heading-xl" style={{ marginBottom: 4 }}>Subscribers</h1>
         <p className="text-body-sm" style={{ color: 'var(--text-muted)' }}>
-          Manage customers, assign tiers, and track acquisition costs.
+          Manage subscribers, assign tiers, and track acquisition costs.
         </p>
       </div>
       <CustomerManager

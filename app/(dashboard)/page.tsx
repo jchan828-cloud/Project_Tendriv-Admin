@@ -54,7 +54,7 @@ export default async function DashboardHome() {
       <div style={{ marginBottom: 32 }}>
         <h1 className="text-heading-xl" style={{ marginBottom: 4 }}>Dashboard</h1>
         <p className="text-body-sm" style={{ color: 'var(--text-muted)' }}>
-          Overview of your marketing, content, and CRM metrics.
+          Overview of your subscribers, marketing, content, and platform metrics.
         </p>
       </div>
 

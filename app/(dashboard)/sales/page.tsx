@@ -19,9 +19,9 @@ export default async function SalesPage() {
     <div style={{ padding: '28px 32px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
         <div>
-          <h1 className="text-heading-xl" style={{ marginBottom: 4 }}>Sales Pipeline</h1>
+          <h1 className="text-heading-xl" style={{ marginBottom: 4 }}>B2B Sales Pipeline</h1>
           <p className="text-body-sm" style={{ color: 'var(--text-muted)' }}>
-            Drag deals between stages to update their status.
+            Track subscriber deals from lead to close. Drag between stages to update.
           </p>
         </div>
       </div>

@@ -46,9 +46,9 @@ const allSections: NavSection[] = [
   },
   {
     key: 'crm',
-    title: 'CRM',
+    title: 'Leads & Outreach',
     items: [
-      { label: 'Contacts', href: '/crm' },
+      { label: 'Prospects', href: '/crm' },
       { label: 'Accounts', href: '/crm/accounts' },
     ],
   },
@@ -65,7 +65,8 @@ const allSections: NavSection[] = [
     items: [
       { label: 'Overview', href: '/finance' },
       { label: 'Analytics', href: '/finance/analytics' },
-      { label: 'Customers', href: '/finance/customers' },
+      { label: 'Subscribers', href: '/finance/customers' },
+      { label: 'Top users', href: '/finance/top-users' },
       { label: 'Billing accounts', href: '/finance/billing' },
     ],
   },
