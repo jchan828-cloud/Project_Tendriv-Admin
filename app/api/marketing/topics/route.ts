@@ -1,7 +1,7 @@
 /** MK8-CMS-004: Topics — list + create */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createServiceRoleClient } from '@/lib/supabase/server'
+import { createServiceRoleClient, createServerSupabaseClient } from '@/lib/supabase/server'
 import { TopicCreateSchema } from '@/lib/types/cms'
 import { appendAuditLog } from '@/lib/audit/log'
 
@@ -17,6 +17,10 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  const authClient = await createServerSupabaseClient()
+  const { data: { user } } = await authClient.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
   const supabase = await createServiceRoleClient()
   const body: unknown = await request.json()
   const parsed = TopicCreateSchema.safeParse(body)
@@ -37,8 +41,8 @@ export async function POST(request: NextRequest) {
 
   await appendAuditLog(supabase, {
     event_type: 'topic-created',
-    actor_id: null,
-    actor_type: 'system',
+    actor_id: user.id,
+    actor_type: 'user',
     resource_type: 'topic',
     resource_id: data.id,
   })

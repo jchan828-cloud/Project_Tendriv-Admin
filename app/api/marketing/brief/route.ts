@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
   }
 
   const prompt = [
-    'You are a B2G (business-to-government) content strategist for Canadian public-sector procurement.',
+    'You are a B2B content strategist for a SaaS platform that helps businesses respond to Canadian government RFx solicitations and procurement opportunities.',
     `Generate a detailed content brief for the following topic: "${topic}"`,
     keywords.length > 0 ? `Target keywords: ${keywords.join(', ')}` : '',
     `Buyer stage: ${buyerStage}`,
@@ -54,10 +54,10 @@ export async function POST(request: NextRequest) {
       headers: {
         'Content-Type': 'application/json',
         'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
+        'anthropic-version': process.env.ANTHROPIC_API_VERSION ?? '2023-06-01',
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: process.env.ANTHROPIC_MODEL ?? 'claude-sonnet-4-20250514',
         max_tokens: 2048,
         messages: [{ role: 'user', content: prompt }],
       }),

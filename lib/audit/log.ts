@@ -22,6 +22,21 @@ export type AuditEventType =
   | 'post-topics-updated'
   | 'post-version-created'
   | 'post-jsonld-updated'
+  | 'deal-created'
+  | 'deal-updated'
+  | 'deal-deleted'
+  | 'media-uploaded'
+  | 'finance-transaction-created'
+  | 'finance-transaction-updated'
+  | 'finance-transaction-deleted'
+  | 'billing-account-created'
+  | 'billing-account-updated'
+  | 'billing-account-deleted'
+  | 'customer-created'
+  | 'customer-updated'
+  | 'customer-deleted'
+  | 'feedback-submitted'
+  | 'feedback-updated'
 
 export type AuditResourceType =
   | 'post'
@@ -35,6 +50,12 @@ export type AuditResourceType =
   | 'lead-score'
   | 'tag'
   | 'topic'
+  | 'deal'
+  | 'media'
+  | 'finance'
+  | 'billing'
+  | 'customer'
+  | 'feedback'
 
 export interface AuditEntry {
   event_type: AuditEventType

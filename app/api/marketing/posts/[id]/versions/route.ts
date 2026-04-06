@@ -8,6 +8,18 @@ interface RouteContext {
   params: Promise<{ id: string }>
 }
 
+function extractContentText(content: unknown): string {
+  if (typeof content === 'string') return content
+  if (typeof content === 'object' && content !== null) {
+    if ('content' in content && typeof (content as Record<string, unknown>).content === 'string') {
+      return (content as Record<string, unknown>).content as string
+    }
+    // Fallback: serialize the object for comparison
+    return JSON.stringify(content)
+  }
+  return ''
+}
+
 export async function GET(request: NextRequest, context: RouteContext) {
   const { id } = await context.params
   const supabase = await createServiceRoleClient()
@@ -34,12 +46,8 @@ export async function GET(request: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: 'Versions not found' }, { status: 404 })
     }
 
-    const oldContent = typeof older.content === 'object' && older.content !== null && 'content' in older.content
-      ? String(older.content.content)
-      : ''
-    const newContent = typeof newer.content === 'object' && newer.content !== null && 'content' in newer.content
-      ? String(newer.content.content)
-      : ''
+    const oldContent = extractContentText(older.content)
+    const newContent = extractContentText(newer.content)
 
     const oldLines = oldContent.split('\n')
     const newLines = newContent.split('\n')
