@@ -12,7 +12,7 @@ export async function upsertTopic(
   data: Omit<BlogPipelineTopic, 'id' | 'created_at' | 'active'>
 ): Promise<{ error: string | null }> {
   const supabase = await createServiceRoleClient()
-  if (id) {
+  if (id !== null) {
     const { error } = await supabase
       .from('blog_pipeline_topics')
       .update({ ...data })
@@ -55,7 +55,7 @@ export async function saveSettings(blogs_per_day: number): Promise<{ error: stri
   const supabase = await createServiceRoleClient()
   const { error } = await supabase
     .from('blog_settings')
-    .upsert({ id: 1, blogs_per_day, updated_at: new Date().toISOString() })
+    .upsert({ id: 1, blogs_per_day, updated_at: new Date().toISOString() }, { onConflict: 'id' })
   if (error) return { error: error.message }
   revalidatePath('/blog/pipeline')
   return { error: null }
