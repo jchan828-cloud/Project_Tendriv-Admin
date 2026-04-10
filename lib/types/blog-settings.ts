@@ -1,6 +1,6 @@
 /** Blog Pipeline Settings type definitions */
 
-export type BlogTopic = {
+export type BlogPipelineTopic = {
   id: string
   title: string
   source: string
