@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Group, Panel, Separator, useDefaultLayout, usePanelCallbackRef } from 'react-resizable-panels'
+import { Group, Panel, Separator, useDefaultLayout, usePanelCallbackRef, type PanelSize } from 'react-resizable-panels'
 
 const groupStyle = { height: '100%' }
 
@@ -29,9 +29,8 @@ export function ResizableShell({ sidebar, children }: ResizableShellProps) {
     }
   }
 
-  function handleSidebarResize() {
-    const isNowCollapsed = sidebarRef?.isCollapsed() ?? false
-    setCollapsed(isNowCollapsed)
+  function handleSidebarResize(panelSize: PanelSize) {
+    setCollapsed(panelSize.asPercentage === 0)
   }
 
   return (
