@@ -34,6 +34,7 @@ const allSections: NavSection[] = [
       { label: 'New post', href: '/posts/new' },
       { label: 'Calendar', href: '/posts/calendar' },
       { label: 'Media library', href: '/media' },
+      { label: 'Blog pipeline', href: '/blog/pipeline' },
     ],
   },
   {
