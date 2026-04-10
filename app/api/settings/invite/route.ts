@@ -19,7 +19,7 @@ export async function POST(req: Request) {
   const service = await createServiceRoleClient()
 
   const { data: invited, error: inviteErr } = await service.auth.admin.inviteUserByEmail(email, {
-    redirectTo: `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://admin.tendriv.ca'}/auth/callback`,
+    redirectTo: `${process.env.NEXT_PUBLIC_ADMIN_URL ?? 'https://admin.tendriv.ca'}/auth/callback`,
   })
 
   if (inviteErr) return NextResponse.json({ success: false, error: inviteErr.message }, { status: 400 })
