@@ -42,6 +42,7 @@ export function ResizableShell({ sidebar, children }: ResizableShellProps) {
         style={groupStyle}
       >
         <Panel
+          id="sidebar"
           panelRef={setSidebarRef}
           defaultSize={15}
           minSize={11}
