@@ -13,7 +13,7 @@ export default async function BlogSettingsPage() {
 
   const service = await createServiceRoleClient()
 
-  const [{ data: topics }, { data: settings }] = await Promise.all([
+  const [{ data: topics }, { data: settings, error: settingsError }] = await Promise.all([
     service
       .from('blog_pipeline_topics')
       .select('*')
@@ -25,7 +25,12 @@ export default async function BlogSettingsPage() {
       .single(),
   ])
 
-  const allTopics: BlogPipelineTopic[] = (topics as BlogPipelineTopic[]) ?? []
+  // PGRST116 = "0 rows" — expected on first-run before seed is applied
+  if (settingsError && settingsError.code !== 'PGRST116') {
+    throw new Error(`Failed to load blog settings: ${settingsError.message}`)
+  }
+
+  const allTopics: BlogPipelineTopic[] = topics ?? []
   const blogsPerDay = (settings as BlogSettings | null)?.blogs_per_day ?? 1
 
   return (
