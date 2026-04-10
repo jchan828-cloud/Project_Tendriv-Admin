@@ -1,0 +1,69 @@
+<h2>Three approaches to the draggable sidebar</h2>
+<p class="subtitle">All three produce the same end result. The difference is implementation strategy.</p>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Custom React hook + pointer events <span style="font-size:11px;color:#009E77;font-weight:400;">(recommended)</span></h3>
+      <p>A <code>useSidebarResize</code> hook handles drag via <code>onPointerDown/Move/Up</code>, clamps width between 160px–360px, snaps to hidden below 120px, and persists to localStorage. A <code>ResizableShell</code> client component replaces the current <code>.shell</code> CSS grid, rendering the sidebar width as an inline CSS variable.</p>
+      <div class="pros-cons">
+        <div class="pros"><h4>Pros</h4><ul><li>Zero new dependencies</li><li>Full control over snap, toggle, animation</li><li>Fits existing code style exactly</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>~80 lines of drag logic to implement carefully</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>react-resizable-panels library</h3>
+      <p>Replace the shell grid with <code>&lt;PanelGroup&gt;</code>, <code>&lt;Panel&gt;</code>, and <code>&lt;PanelResizeHandle&gt;</code> from the <code>react-resizable-panels</code> package. Built-in keyboard resize, touch support, and collapse.</p>
+      <div class="pros-cons">
+        <div class="pros"><h4>Pros</h4><ul><li>Keyboard accessible out of the box</li><li>Battle-tested edge cases (touch, a11y)</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>New dependency (~15 kB)</li><li>Library panel API differs from current CSS grid — more layout rework</li><li>Less control over snap / collapse animation</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>CSS <code>resize: horizontal</code> (native browser)</h3>
+      <p>Add <code>resize: horizontal; overflow: auto;</code> to the sidebar. No JS needed — browser handles the drag natively.</p>
+      <div class="pros-cons">
+        <div class="pros"><h4>Pros</h4><ul><li>~3 lines of CSS, zero JS</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>Native handle looks out of place (bottom-right grip, not a center splitter)</li><li>No snap-to-hidden</li><li>No toggle button</li><li>No localStorage persistence</li></ul></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section" style="margin-top:24px;">
+  <div class="label">Visual result (all approaches look the same)</div>
+  <div style="border:1px solid #ddd;border-radius:8px;overflow:hidden;background:#fafafa;">
+    <div style="height:32px;background:#fff;border-bottom:1px solid #eee;display:flex;align-items:center;padding:0 12px;font-size:11px;color:#999;gap:8px;">
+      <span style="color:#009E77;font-weight:700;font-size:12px;">tendriv</span>
+      <span>admin portal</span>
+    </div>
+    <div style="display:flex;height:160px;">
+      <div style="width:180px;background:#EDF0F3;border-right:1px solid #ddd;padding:10px 8px;font-size:10px;color:#666;flex-shrink:0;">
+        <div style="margin-bottom:6px;font-size:9px;color:#aaa;letter-spacing:0.15em;text-transform:uppercase;">Content</div>
+        <div style="padding:4px 6px;background:#E0FBF4;color:#009E77;border-radius:4px;margin-bottom:2px;">Blog posts</div>
+        <div style="padding:4px 6px;margin-bottom:2px;color:#888;">Calendar</div>
+        <div style="padding:4px 6px;color:#888;">Media</div>
+      </div>
+      <!-- Drag handle -->
+      <div style="width:5px;background:#00C896;cursor:col-resize;position:relative;display:flex;align-items:center;justify-content:center;">
+        <div style="width:3px;height:24px;background:rgba(255,255,255,0.6);border-radius:2px;"></div>
+      </div>
+      <!-- Toggle button -->
+      <div style="position:relative;flex:1;background:#fff;">
+        <div style="position:absolute;top:50%;left:-1px;transform:translateY(-50%);width:14px;height:28px;background:#00C896;border-radius:0 6px 6px 0;display:flex;align-items:center;justify-content:center;cursor:pointer;">
+          <span style="color:white;font-size:9px;">‹</span>
+        </div>
+        <div style="padding:16px;font-size:11px;color:#aaa;text-align:center;margin-top:50px;">Main content area</div>
+      </div>
+    </div>
+  </div>
+</div>

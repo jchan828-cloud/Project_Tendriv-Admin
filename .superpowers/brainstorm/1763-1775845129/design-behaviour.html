@@ -1,0 +1,120 @@
+<h2>Design — Section 2: Behaviour & Visual</h2>
+<p class="subtitle">Sizing rules, snap behaviour, and the drag handle + toggle button design</p>
+
+<div class="split">
+  <div class="mockup">
+    <div class="mockup-header">Sidebar expanded — drag to resize</div>
+    <div class="mockup-body" style="padding:0;overflow:hidden;">
+      <!-- Topbar -->
+      <div style="height:32px;background:#fff;border-bottom:1px solid #eee;display:flex;align-items:center;padding:0 12px;gap:8px;">
+        <span style="color:#009E77;font-weight:700;font-size:11px;">tendriv</span>
+        <span style="font-size:9px;color:#aaa;font-family:monospace;">admin portal</span>
+      </div>
+      <!-- Shell body -->
+      <div style="display:flex;height:220px;position:relative;">
+        <!-- Sidebar panel -->
+        <div style="width:160px;background:#EDF0F3;border-right:none;padding:8px 6px;font-size:10px;flex-shrink:0;">
+          <div style="font-size:8px;color:#aaa;letter-spacing:0.15em;text-transform:uppercase;padding:6px 6px 3px;">Content</div>
+          <div style="padding:4px 6px;background:#E0FBF4;color:#009E77;border-radius:4px;margin-bottom:2px;font-size:10px;">Blog posts</div>
+          <div style="padding:4px 6px;margin-bottom:2px;color:#888;font-size:10px;">Calendar</div>
+          <div style="padding:4px 6px;color:#888;font-size:10px;">Media</div>
+          <div style="font-size:8px;color:#aaa;letter-spacing:0.15em;text-transform:uppercase;padding:10px 6px 3px;">Analytics</div>
+          <div style="padding:4px 6px;margin-bottom:2px;color:#888;font-size:10px;">Performance</div>
+          <div style="padding:4px 6px;color:#888;font-size:10px;">Funnel</div>
+        </div>
+        <!-- Drag handle (hovered state) -->
+        <div style="width:4px;background:#00C896;cursor:col-resize;display:flex;align-items:center;justify-content:center;flex-shrink:0;position:relative;">
+          <div style="display:flex;flex-direction:column;gap:3px;">
+            <div style="width:2px;height:2px;border-radius:50%;background:rgba(255,255,255,0.8);"></div>
+            <div style="width:2px;height:2px;border-radius:50%;background:rgba(255,255,255,0.8);"></div>
+            <div style="width:2px;height:2px;border-radius:50%;background:rgba(255,255,255,0.8);"></div>
+          </div>
+        </div>
+        <!-- Main content -->
+        <div style="flex:1;background:#fff;position:relative;">
+          <!-- Toggle button -->
+          <div style="position:absolute;top:50%;left:0;transform:translateY(-50%);width:14px;height:28px;background:#00C896;border-radius:0 6px 6px 0;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:2px 0 6px rgba(0,200,150,0.3);">
+            <span style="color:white;font-size:10px;line-height:1;">‹</span>
+          </div>
+          <div style="padding:16px 20px;font-size:11px;color:#aaa;">Main content area</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mockup">
+    <div class="mockup-header">Sidebar collapsed — toggle to re-expand</div>
+    <div class="mockup-body" style="padding:0;overflow:hidden;">
+      <!-- Topbar -->
+      <div style="height:32px;background:#fff;border-bottom:1px solid #eee;display:flex;align-items:center;padding:0 12px;gap:8px;">
+        <span style="color:#009E77;font-weight:700;font-size:11px;">tendriv</span>
+        <span style="font-size:9px;color:#aaa;font-family:monospace;">admin portal</span>
+      </div>
+      <!-- Shell body — sidebar hidden -->
+      <div style="display:flex;height:220px;position:relative;">
+        <!-- Main content full width -->
+        <div style="flex:1;background:#fff;position:relative;">
+          <!-- Toggle button flipped -->
+          <div style="position:absolute;top:50%;left:0;transform:translateY(-50%);width:14px;height:28px;background:#00C896;border-radius:0 6px 6px 0;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:2px 0 6px rgba(0,200,150,0.3);">
+            <span style="color:white;font-size:10px;line-height:1;">›</span>
+          </div>
+          <div style="padding:16px 20px;font-size:11px;color:#aaa;">Main content takes full width</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section" style="margin-top:24px;">
+  <div class="label">Sizing rules (percentage-based — library requirement)</div>
+  <table style="width:100%;font-size:12px;border-collapse:collapse;">
+    <thead>
+      <tr style="border-bottom:2px solid #eee;">
+        <th style="padding:6px 8px;text-align:left;color:#888;font-weight:500;">Property</th>
+        <th style="padding:6px 8px;text-align:left;color:#888;font-weight:500;">Value</th>
+        <th style="padding:6px 8px;text-align:left;color:#888;font-weight:500;">Approx px at 1400px viewport</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr style="border-bottom:1px solid #f0f0f0;">
+        <td style="padding:6px 8px;font-family:monospace;color:#3B82F6;">defaultSize</td>
+        <td style="padding:6px 8px;">15%</td>
+        <td style="padding:6px 8px;color:#666;">~210px (matches current 200px sidebar)</td>
+      </tr>
+      <tr style="border-bottom:1px solid #f0f0f0;">
+        <td style="padding:6px 8px;font-family:monospace;color:#3B82F6;">minSize</td>
+        <td style="padding:6px 8px;">11%</td>
+        <td style="padding:6px 8px;color:#666;">~154px — floor before snap-to-collapse</td>
+      </tr>
+      <tr style="border-bottom:1px solid #f0f0f0;">
+        <td style="padding:6px 8px;font-family:monospace;color:#3B82F6;">maxSize</td>
+        <td style="padding:6px 8px;">28%</td>
+        <td style="padding:6px 8px;color:#666;">~390px — ceiling</td>
+      </tr>
+      <tr style="border-bottom:1px solid #f0f0f0;">
+        <td style="padding:6px 8px;font-family:monospace;color:#009E77;">collapsible</td>
+        <td style="padding:6px 8px;">true</td>
+        <td style="padding:6px 8px;color:#666;">Drag below minSize → snaps to 0 (hidden)</td>
+      </tr>
+      <tr>
+        <td style="padding:6px 8px;font-family:monospace;color:#009E77;">autoSaveId</td>
+        <td style="padding:6px 8px;">"tendriv-shell"</td>
+        <td style="padding:6px 8px;color:#666;">localStorage key — persists width + collapse state</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="section">
+  <div class="label">Drag handle styling</div>
+  <div style="font-size:13px;color:#444;line-height:1.7;">
+    The <code>PanelResizeHandle</code> renders a 4px wide bar. We style it with the jade token (<code>--jade</code>) on <code>[data-resize-handle-active]</code> and <code>:hover</code>, and a neutral <code>--border</code> color at rest. Three dot grips are centered vertically. Smooth <code>150ms</code> colour transition.
+  </div>
+</div>
+
+<div class="section">
+  <div class="label">Toggle button</div>
+  <div style="font-size:13px;color:#444;line-height:1.7;">
+    Absolutely positioned on the left edge of the main panel. Jade pill, 14×28px, <code>border-radius: 0 6px 6px 0</code>. Uses <code>panelRef.collapse()</code> / <code>panelRef.expand()</code> from the library. Chevron flips (<code>‹</code> / <code>›</code>) based on <code>panel.isCollapsed()</code>. Button stays visible at all times so the user can always re-open the sidebar.
+  </div>
+</div>
