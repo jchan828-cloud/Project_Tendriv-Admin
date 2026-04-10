@@ -4,6 +4,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import type { UserRole } from '@/lib/auth/roles'
 
 export type ModuleKey = 'content' | 'analytics' | 'crm' | 'sales' | 'finance' | 'feedback' | 'system'
 
@@ -88,20 +89,25 @@ const allSections: NavSection[] = [
 ]
 
 interface SidebarProps {
-  modules?: ModuleKey[]
+  readonly modules?: ModuleKey[]
+  readonly role?: UserRole
 }
 
-export function Sidebar({ modules }: SidebarProps) {
+export function Sidebar({ modules, role }: SidebarProps) {
   const pathname = usePathname()
 
   const visibleSections = modules
     ? allSections.filter((s) => modules.includes(s.key))
     : allSections
 
+  const settingsItems: NavItem[] = [
+    { label: 'Profile', href: '/settings/profile' },
+    ...(role === 'admin' ? [{ label: 'Users', href: '/settings/users' }] : []),
+  ]
+
   function isActive(href: string): boolean {
     if (href === pathname) return true
     if (href === '/' && pathname === '/') return true
-    // /posts/new and /posts/[id] should highlight "New post" or "Blog posts"
     if (href === '/posts' && pathname === '/posts') return true
     if (href === '/posts/new' && pathname.startsWith('/posts/') && pathname !== '/posts' && pathname !== '/posts/calendar') return true
     if (href !== '/' && href !== '/posts' && href !== '/posts/new' && pathname.startsWith(href + '/')) return true
@@ -138,6 +144,19 @@ export function Sidebar({ modules }: SidebarProps) {
           ))}
         </div>
       ))}
+      <div style={{ marginTop: 'auto' }}>
+        <div className="nav-section">Settings</div>
+        {settingsItems.map((item) => (
+          <Link
+            key={item.href}
+            href={item.href}
+            className={`nav-item${isActive(item.href) ? ' active' : ''}`}
+          >
+            <span className="nav-dot" />
+            {item.label}
+          </Link>
+        ))}
+      </div>
     </aside>
   )
 }

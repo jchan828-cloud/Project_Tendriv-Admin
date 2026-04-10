@@ -3,7 +3,7 @@ import { getUserRole } from '@/lib/auth/roles'
 import { Sidebar } from '@/components/layout/sidebar'
 import { Topbar } from '@/components/layout/topbar'
 
-export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
+export default async function DashboardLayout({ children }: { readonly children: React.ReactNode }) {
   const supabase = await createServerSupabaseClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -14,7 +14,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   return (
     <div className="shell">
       <Topbar email={user?.email} />
-      <Sidebar modules={[...role.modules]} />
+      <Sidebar modules={[...role.modules]} role={role.role} />
       <main className="shell-main">{children}</main>
     </div>
   )
