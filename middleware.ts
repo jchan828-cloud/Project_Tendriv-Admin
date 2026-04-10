@@ -1,6 +1,11 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 
+/* Force Node.js runtime so middleware respects vercel.json regions (yul1).
+   Without this, Next.js runs middleware at all Vercel edge locations,
+   routing auth tokens through US infrastructure — a sovereignty violation. */
+export const runtime = 'nodejs';
+
 export async function middleware(request: NextRequest) {
   const response = NextResponse.next({ request: { headers: request.headers } });
   const supabase = createServerClient(
