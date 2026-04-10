@@ -44,7 +44,11 @@ function TopicRow({ topic }: { topic: BlogPipelineTopic }) {
 
   function handleDelete() {
     startTransition(async () => {
-      await deleteTopic(topic.id)
+      const result = await deleteTopic(topic.id)
+      if (result.error) {
+        setError(result.error)
+        setConfirmDelete(false)
+      }
     })
   }
 
@@ -134,7 +138,9 @@ export function TopicTable({ topics }: { topics: BlogPipelineTopic[] }) {
         </tr>
       </thead>
       <tbody>
-        {topics.map(topic => <TopicRow key={topic.id} topic={topic} />)}
+        {topics.map(topic => (
+          <TopicRow key={`${topic.id}-${topic.relevance}-${topic.tier}`} topic={topic} />
+        ))}
       </tbody>
     </table>
   )
