@@ -16,6 +16,7 @@
     "next-mdx-remote": "^6.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-resizable-panels": "^4.9.0",
     "zod": "^4.3.6"
   },
   "devDependencies": {
