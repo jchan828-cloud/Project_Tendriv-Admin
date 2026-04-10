@@ -1,7 +1,7 @@
 // components/blog/generation-settings-form.tsx
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useTransition, useRef, useEffect } from 'react'
 import { saveSettings } from '@/lib/actions/blog-settings'
 
 export function GenerationSettingsForm({ initialValue }: { initialValue: number }) {
@@ -9,6 +9,11 @@ export function GenerationSettingsForm({ initialValue }: { initialValue: number 
   const [error, setError] = useState<string | null>(null)
   const [saved, setSaved] = useState(false)
   const [isPending, startTransition] = useTransition()
+  const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => () => {
+    if (savedTimerRef.current) clearTimeout(savedTimerRef.current)
+  }, [])
 
   function handleSave() {
     setError(null)
@@ -19,7 +24,8 @@ export function GenerationSettingsForm({ initialValue }: { initialValue: number 
         setError(result.error)
       } else {
         setSaved(true)
-        setTimeout(() => setSaved(false), 2500)
+        if (savedTimerRef.current) clearTimeout(savedTimerRef.current)
+        savedTimerRef.current = setTimeout(() => setSaved(false), 2500)
       }
     })
   }
@@ -36,7 +42,8 @@ export function GenerationSettingsForm({ initialValue }: { initialValue: number 
         max={5}
         value={value}
         onChange={e => setValue(Number(e.target.value))}
-        className="input-base w-20"
+        disabled={isPending}
+        className={`input-base w-20 ${isPending ? 'opacity-50' : ''}`}
       />
       <button
         onClick={handleSave}
