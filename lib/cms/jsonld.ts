@@ -5,7 +5,7 @@ import { BlogPost, Faq, HowToStep } from '@/lib/types/cms'
 const PUBLISHER = {
   '@type': 'Organization',
   name: 'Tendriv',
-  url: 'https://tendriv.ca',
+  url: process.env.NEXT_PUBLIC_MARKETING_URL ?? 'https://tendriv.ca',
 }
 
 export function inferSchemaType(post: BlogPost): 'Article' | 'FAQPage' | 'HowTo' {

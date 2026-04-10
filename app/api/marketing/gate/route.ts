@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
   }
 
   // Upsert contact — don't downgrade status
-  const consentSource = post.canonical_url ?? `https://tendriv.ca/blog/${source_post_id}`
+  const consentSource = post.canonical_url ?? `${process.env.NEXT_PUBLIC_MARKETING_URL ?? 'https://tendriv.ca'}/blog/${source_post_id}`
   const { data: contact } = await supabase
     .from('outreach_contacts')
     .upsert(
