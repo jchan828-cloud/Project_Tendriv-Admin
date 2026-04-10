@@ -2,6 +2,7 @@ import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { getUserRole } from '@/lib/auth/roles'
 import { Sidebar } from '@/components/layout/sidebar'
 import { Topbar } from '@/components/layout/topbar'
+import { ResizableShell } from '@/components/layout/resizable-shell'
 
 export default async function DashboardLayout({ children }: { readonly children: React.ReactNode }) {
   const supabase = await createServerSupabaseClient()
@@ -14,8 +15,9 @@ export default async function DashboardLayout({ children }: { readonly children:
   return (
     <div className="shell">
       <Topbar email={user?.email} />
-      <Sidebar modules={[...role.modules]} role={role.role} />
-      <main className="shell-main">{children}</main>
+      <ResizableShell sidebar={<Sidebar modules={[...role.modules]} role={role.role} />}>
+        {children}
+      </ResizableShell>
     </div>
   )
 }
