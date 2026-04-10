@@ -485,15 +485,14 @@
    7. SHELL LAYOUT — sidebar + topbar
    ───────────────────────────────────────────────────────────── */
 .shell {
-  display: grid;
-  grid-template-columns: 200px 1fr;
-  grid-template-rows: 44px 1fr;
+  display: flex;
+  flex-direction: column;
   height: 100vh;
   background: var(--surface-root);
 }
 
 .topbar {
-  grid-column: 1 / -1;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -613,10 +612,78 @@
 }
 
 .shell-main {
+  height: 100%;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
 }
+
+/* ResizableShell wrapper — fills height below topbar */
+.shell-resizable {
+  flex: 1;
+  min-height: 0;
+}
+
+/* Main panel content wrapper — owns the toggle button */
+.shell-main-wrapper {
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Drag handle */
+.shell-resize-handle {
+  width: 4px;
+  background: var(--border);
+  cursor: col-resize;
+  transition: background var(--duration-base) ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.shell-resize-handle:hover,
+.shell-resize-handle[data-separator="active"] {
+  background: var(--jade);
+}
+.shell-resize-dots {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  pointer-events: none;
+}
+.shell-resize-dots span {
+  display: block;
+  width: 2px;
+  height: 2px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.7);
+}
+
+/* Sidebar toggle button — pinned to left edge of main panel */
+.shell-toggle {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  transform: translateY(-50%);
+  width: 14px;
+  height: 28px;
+  background: var(--jade);
+  border-radius: 0 6px 6px 0;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 10px;
+  line-height: 1;
+  box-shadow: 2px 0 6px var(--jade-20);
+  z-index: 10;
+  transition: background var(--duration-base) ease;
+  padding: 0;
+}
+.shell-toggle:hover { background: var(--jade-dim); }
 
 /* ─────────────────────────────────────────────────────────────
    8. PRINT
