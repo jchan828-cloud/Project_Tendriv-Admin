@@ -48,7 +48,8 @@ export function AddTopicForm() {
           <input
             value={form.title}
             onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
-            className="input-base w-full mt-1"
+            disabled={isPending}
+            className={`input-base w-full mt-1 ${isPending ? 'opacity-50' : ''}`}
             placeholder="IT Professional Services"
           />
         </div>
@@ -57,7 +58,8 @@ export function AddTopicForm() {
           <input
             value={form.source}
             onChange={e => setForm(f => ({ ...f, source: e.target.value }))}
-            className="input-base w-full mt-1"
+            disabled={isPending}
+            className={`input-base w-full mt-1 ${isPending ? 'opacity-50' : ''}`}
             placeholder="CanadaBuys"
           />
         </div>
@@ -66,7 +68,8 @@ export function AddTopicForm() {
           <input
             value={form.source_url}
             onChange={e => setForm(f => ({ ...f, source_url: e.target.value }))}
-            className="input-base w-full mt-1"
+            disabled={isPending}
+            className={`input-base w-full mt-1 ${isPending ? 'opacity-50' : ''}`}
             placeholder="https://canadabuys.canada.ca/..."
           />
         </div>
@@ -78,8 +81,12 @@ export function AddTopicForm() {
             max={1}
             step={0.05}
             value={form.relevance}
-            onChange={e => setForm(f => ({ ...f, relevance: parseFloat(e.target.value) }))}
-            className="input-base w-full mt-1"
+            onChange={e => {
+              const parsed = parseFloat(e.target.value)
+              if (!isNaN(parsed)) setForm(f => ({ ...f, relevance: parsed }))
+            }}
+            disabled={isPending}
+            className={`input-base w-full mt-1 ${isPending ? 'opacity-50' : ''}`}
           />
         </div>
         <div>
@@ -87,7 +94,8 @@ export function AddTopicForm() {
           <select
             value={form.tier}
             onChange={e => setForm(f => ({ ...f, tier: e.target.value as typeof form.tier }))}
-            className="input-base w-full mt-1"
+            disabled={isPending}
+            className={`input-base w-full mt-1 ${isPending ? 'opacity-50' : ''}`}
           >
             {TIERS.map(t => <option key={t} value={t}>{t}</option>)}
           </select>
