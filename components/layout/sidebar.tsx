@@ -41,6 +41,7 @@ const allSections: NavSection[] = [
     items: [
       { label: 'Post performance', href: '/analytics' },
       { label: 'Funnel', href: '/analytics/funnel' },
+      { label: 'Agency RFX', href: '/analytics/agencies' },
       { label: 'UTM builder', href: '/analytics/utms' },
     ],
   },
