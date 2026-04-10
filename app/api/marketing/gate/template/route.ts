@@ -6,12 +6,29 @@ import { appendAuditLog } from '@/lib/audit/log'
 import { GateTemplateSchema, TEMPLATE_URL_ENV } from '@/lib/types/gate-template'
 import { sha256 } from '@/lib/utils/hash'
 
+const ALLOWED_ORIGIN = process.env.NEXT_PUBLIC_MARKETING_URL ?? 'https://tendriv.ca'
+
+function corsHeaders() {
+  return {
+    'Access-Control-Allow-Origin': ALLOWED_ORIGIN,
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+  }
+}
+
+export async function OPTIONS() {
+  return new NextResponse(null, { status: 204, headers: corsHeaders() })
+}
+
 export async function POST(request: NextRequest) {
   const supabase = await createServiceRoleClient()
   const body: unknown = await request.json()
   const parsed = GateTemplateSchema.safeParse(body)
   if (!parsed.success) {
-    return NextResponse.json({ error: 'Validation failed', details: parsed.error.issues }, { status: 400 })
+    return NextResponse.json(
+      { error: 'Validation failed', details: parsed.error.issues },
+      { status: 400, headers: corsHeaders() }
+    )
   }
 
   const { name, email, organisation, template_id } = parsed.data
@@ -31,11 +48,11 @@ export async function POST(request: NextRequest) {
   if ((recentCount ?? 0) > 5) {
     return NextResponse.json(
       { error: 'Too many submissions' },
-      { status: 429, headers: { 'Retry-After': '3600' } }
+      { status: 429, headers: { ...corsHeaders(), 'Retry-After': '3600' } }
     )
   }
 
-  const consentSource = `${process.env.NEXT_PUBLIC_MARKETING_URL ?? 'https://tendriv.ca'}/resources`
+  const consentSource = `${ALLOWED_ORIGIN}/resources`
 
   // Upsert contact — don't downgrade status
   const { data: contact } = await supabase
@@ -83,5 +100,8 @@ export async function POST(request: NextRequest) {
 
   const downloadUrl = process.env[TEMPLATE_URL_ENV[template_id]] ?? null
 
-  return NextResponse.json({ success: true, download_url: downloadUrl })
+  return NextResponse.json(
+    { success: true, download_url: downloadUrl },
+    { headers: corsHeaders() }
+  )
 }
