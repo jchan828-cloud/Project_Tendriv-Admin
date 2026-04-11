@@ -15,7 +15,7 @@ export function ResizableShell({ sidebar, children }: ResizableShellProps) {
   const [collapsed, setCollapsed] = useState(false)
   const [mounted, setMounted] = useState(false)
 
-  const { defaultLayout, onLayoutChanged } = useDefaultLayout({ id: 'tendriv-shell' })
+  const { defaultLayout, onLayoutChanged } = useDefaultLayout({ id: 'tendriv-shell-v2' })
 
   useEffect(() => {
     setMounted(true)
@@ -44,11 +44,11 @@ export function ResizableShell({ sidebar, children }: ResizableShellProps) {
         <Panel
           id="sidebar"
           panelRef={setSidebarRef}
-          defaultSize={15}
-          minSize={11}
-          maxSize={28}
+          defaultSize="15%"
+          minSize="11%"
+          maxSize="28%"
           collapsible
-          collapsedSize={0}
+          collapsedSize="0%"
           onResize={handleSidebarResize}
         >
           {sidebar}
