@@ -37,6 +37,7 @@ export type BlogPost = {
   status: PostStatus
   is_gated: boolean
   gate_cta: string | null
+  gate_asset_ids: string[]
   author_id: string
   reviewer_id: string | null
   reviewer_notes: string | null
@@ -65,6 +66,7 @@ export const BlogPostInsertSchema = z.object({
   status: PostStatusSchema.optional(),
   is_gated: z.boolean().optional(),
   gate_cta: z.string().max(200).nullable().optional(),
+  gate_asset_ids: z.array(z.enum(['tbips-checklist', 'bid-no-bid-framework', 'psib-roadmap'])).optional(),
   author_id: z.string().uuid(),
   reviewer_id: z.string().uuid().nullable().optional(),
   reviewer_notes: z.string().nullable().optional(),
@@ -90,6 +92,7 @@ export const BlogPostUpdateSchema = z.object({
   status: PostStatusSchema.optional(),
   is_gated: z.boolean().optional(),
   gate_cta: z.string().max(200).nullable().optional(),
+  gate_asset_ids: z.array(z.enum(['tbips-checklist', 'bid-no-bid-framework', 'psib-roadmap'])).optional(),
   reviewer_id: z.string().uuid().nullable().optional(),
   reviewer_notes: z.string().nullable().optional(),
   published_at: z.string().datetime().nullable().optional(),
