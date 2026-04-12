@@ -37,6 +37,12 @@ export type BlogPost = {
   status: PostStatus
   is_gated: boolean
   gate_cta: string | null
+  /**
+   * Content-upgrade gating: IDs of downloadable template assets attached to
+   * this post. When set, the post body stays fully indexable by search engines
+   * while only the bonus assets require a gate submission. Prefer this over
+   * `is_gated: true` which hides the entire post from crawlers.
+   */
   gate_asset_ids: string[]
   author_id: string
   reviewer_id: string | null

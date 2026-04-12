@@ -13,18 +13,18 @@ export interface ScoreBreakdown {
 /* ── Scoring constants (no magic numbers) ───────────── */
 
 const CONTENT_GATE_SUBMIT_POINTS = 8
-const CONTENT_POST_VIEW_POINTS = 4
+const CONTENT_POST_VIEW_BASE_POINTS = 2
 const CONTENT_SCROLL_DEPTH_POINTS = 2
 const CONTENT_CTA_CLICK_POINTS = 6
-const CONTENT_TIME_ON_PAGE_POINTS = 3  // Awarded when seconds >= 120
-const CONTENT_TIME_ON_PAGE_THRESHOLD = 120
+const CONTENT_TIME_ON_PAGE_POINTS = 3
+const CONTENT_TIME_ON_PAGE_THRESHOLD_SEC = 120
 const CONTENT_MAX = 30
 
-/** buyer_stage multiplier: decision-stage content signals higher intent */
+/** Buyer-stage multiplier: decision-stage content signals stronger intent */
 const BUYER_STAGE_MULTIPLIER: Record<string, number> = {
+  decision: 2.0,
+  consideration: 1.5,
   awareness: 1.0,
-  consideration: 1.25,
-  decision: 1.5,
 }
 
 const EMAIL_REPLY_POINTS = 10
@@ -36,8 +36,14 @@ const FIRMOGRAPHIC_PSIB_POINTS = 15
 const FIRMOGRAPHIC_PROVINCE_POINTS = 5
 const FIRMOGRAPHIC_NAICS_POINTS = 5
 const FIRMOGRAPHIC_MAX = 25
+
+/**
+ * All Canadian provinces and territories are eligible.
+ * Federal procurement is national — penalising contacts outside
+ * the four largest provinces loses valid government leads.
+ */
 const FIRMOGRAPHIC_ELIGIBLE_PROVINCES = [
-  'ON', 'QC', 'BC', 'AB', 'MB', 'SK', 'NS', 'NB', 'NL', 'PE', 'NT', 'YT', 'NU',
+  'AB', 'BC', 'MB', 'NB', 'NL', 'NS', 'NT', 'NU', 'ON', 'PE', 'QC', 'SK', 'YT',
 ]
 
 const RECENCY_BASE = 20
@@ -55,12 +61,29 @@ function daysSince(dateStr: string | null): number {
   return Math.floor(diff / (1000 * 60 * 60 * 24))
 }
 
+/**
+ * Extract buyer_stage from activity event metadata.
+ * The marketing_events and activity_log entries may carry
+ * `buyer_stage` when the originating post has one set.
+ */
+function extractBuyerStage(meta: Record<string, unknown>): number {
+  const stage = 'buyer_stage' in meta && typeof meta.buyer_stage === 'string'
+    ? meta.buyer_stage
+    : null
+  return stage ? (BUYER_STAGE_MULTIPLIER[stage] ?? 1.0) : 1.0
+}
+
 export function computeScore(
   contact: OutreachContact,
   activityLog: OutreachActivityLog[],
   contentTouches: ContentAttribution[]
 ): { score: number; breakdown: ScoreBreakdown } {
-  // Content engagement: +8 gate submit, +4 post_view, +2 scroll_depth >= 75
+  // Content engagement:
+  //   +8 gate submit
+  //   +2–4 post_view (scaled by buyer stage: awareness ×1, consideration ×1.5, decision ×2)
+  //   +2 scroll_depth >= 75%
+  //   +6 cta_click (strong intent signal)
+  //   +3 time_on_page >= 120s (deep engagement)
   let contentRaw = 0
   const gateSubmits = contentTouches.filter((t) => t.touch_type === 'first').length
   contentRaw += gateSubmits * CONTENT_GATE_SUBMIT_POINTS
@@ -69,30 +92,29 @@ export function computeScore(
     const meta = event.event_metadata
     if (meta && typeof meta === 'object') {
       const eventType = 'event_type' in meta ? meta.event_type : null
-      const buyerStage = 'buyer_stage' in meta ? String(meta.buyer_stage) : null
-      const multiplier = buyerStage ? (BUYER_STAGE_MULTIPLIER[buyerStage] ?? 1.0) : 1.0
+      const stageMultiplier = extractBuyerStage(meta as Record<string, unknown>)
 
       if (eventType === 'post_view') {
-        contentRaw += CONTENT_POST_VIEW_POINTS * multiplier
+        contentRaw += Math.round(CONTENT_POST_VIEW_BASE_POINTS * stageMultiplier)
       }
       if (eventType === 'scroll_depth') {
         const depth = 'depth' in meta ? Number(meta.depth) : 0
         if (depth >= 75) {
-          contentRaw += CONTENT_SCROLL_DEPTH_POINTS * multiplier
+          contentRaw += CONTENT_SCROLL_DEPTH_POINTS
         }
       }
       if (eventType === 'cta_click') {
-        contentRaw += CONTENT_CTA_CLICK_POINTS * multiplier
+        contentRaw += CONTENT_CTA_CLICK_POINTS
       }
       if (eventType === 'time_on_page') {
         const seconds = 'seconds' in meta ? Number(meta.seconds) : 0
-        if (seconds >= CONTENT_TIME_ON_PAGE_THRESHOLD) {
-          contentRaw += CONTENT_TIME_ON_PAGE_POINTS * multiplier
+        if (seconds >= CONTENT_TIME_ON_PAGE_THRESHOLD_SEC) {
+          contentRaw += CONTENT_TIME_ON_PAGE_POINTS
         }
       }
     }
   }
-  const content_engagement = clamp(Math.round(contentRaw), 0, CONTENT_MAX)
+  const content_engagement = clamp(contentRaw, 0, CONTENT_MAX)
 
   // Email engagement: +10 reply, +5 click, +2 open
   let emailRaw = 0
@@ -103,7 +125,7 @@ export function computeScore(
   }
   const email_engagement = clamp(emailRaw, 0, EMAIL_MAX)
 
-  // Firmographic: +15 PSIB, +5 province match, +5 naics non-empty
+  // Firmographic: +15 PSIB, +5 any Canadian province/territory, +5 UNSPSC non-empty
   let firmRaw = 0
   if (contact.pipeline === 'psib') firmRaw += FIRMOGRAPHIC_PSIB_POINTS
   if (contact.province && FIRMOGRAPHIC_ELIGIBLE_PROVINCES.includes(contact.province)) {
