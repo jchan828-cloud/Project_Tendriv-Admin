@@ -20,12 +20,21 @@ export async function POST(request: NextRequest) {
   // Fetch post
   const { data: post, error: postErr } = await supabase
     .from('blog_posts')
-    .select('id, canonical_url, title, is_gated')
+    .select('id, canonical_url, title, is_gated, gate_asset_ids')
     .eq('id', source_post_id)
     .single()
 
-  if (postErr || !post || !post.is_gated) {
-    return NextResponse.json({ error: 'Post not found or not gated' }, { status: 400 })
+  if (postErr || !post) {
+    return NextResponse.json({ error: 'Post not found' }, { status: 400 })
+  }
+
+  // Accept gate submissions for:
+  // 1. Legacy fully-gated posts (is_gated = true)
+  // 2. Content-upgrade posts with bonus assets (gate_asset_ids is non-empty)
+  // Posts with neither should not accept gate submissions.
+  const hasGateAssets = Array.isArray(post.gate_asset_ids) && post.gate_asset_ids.length > 0
+  if (!post.is_gated && !hasGateAssets) {
+    return NextResponse.json({ error: 'Post has no gated content' }, { status: 400 })
   }
 
   // Rate limit: 5 gate-submit per ip_hash per hour
@@ -77,20 +86,32 @@ export async function POST(request: NextRequest) {
     })
 
     // Attribution: first-touch if no prior record
-    const { data: existing } = await supabase
+    const { data: existingFirst } = await supabase
       .from('content_attribution')
-      .select('id')
+      .select('id, post_id')
       .eq('contact_id', contactId)
       .eq('touch_type', 'first')
       .limit(1)
       .single()
 
-    if (!existing) {
+    if (!existingFirst) {
       await supabase.from('content_attribution').insert({
         contact_id: contactId,
         post_id: source_post_id,
         touch_type: 'first',
       })
+    } else if (existingFirst.post_id !== source_post_id) {
+      // Record assist touch — this post influenced the journey
+      // between the original first-touch and the current interaction.
+      await supabase.from('content_attribution').upsert(
+        {
+          contact_id: contactId,
+          post_id: source_post_id,
+          touch_type: 'assist',
+          touched_at: new Date().toISOString(),
+        },
+        { onConflict: 'contact_id,post_id,touch_type' }
+      )
     }
 
     // Always upsert last-touch

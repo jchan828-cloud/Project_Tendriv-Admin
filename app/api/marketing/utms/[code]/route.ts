@@ -34,12 +34,52 @@ export async function GET(request: NextRequest, context: RouteContext) {
   const ipHash = await sha256(forwardedFor)
   const userAgentHash = await sha256(request.headers.get('user-agent') ?? 'unknown')
 
+  // Attempt to resolve contact: check if this IP hash previously submitted a gate form.
+  // The gate route uses the same sha256(x-forwarded-for) as session_id on gate_submit events.
+  let resolvedContactId: string | null = null
+  const { data: priorGateEvent } = await supabase
+    .from('marketing_events')
+    .select('metadata')
+    .eq('event_type', 'gate_submit')
+    .eq('session_id', ipHash)
+    .order('occurred_at', { ascending: false })
+    .limit(1)
+    .single()
+
+  if (priorGateEvent?.metadata && typeof priorGateEvent.metadata === 'object') {
+    const gateMeta = priorGateEvent.metadata as Record<string, unknown>
+    const org = 'organisation' in gateMeta ? String(gateMeta.organisation) : null
+    if (org) {
+      const { data: contact } = await supabase
+        .from('outreach_contacts')
+        .select('id')
+        .eq('business_name', org)
+        .limit(1)
+        .single()
+      resolvedContactId = contact?.id ?? null
+    }
+  }
+
   await supabase.from('utm_clicks').insert({
     utm_id: utm.id,
     ip_hash: ipHash,
     referrer: request.headers.get('referer') ?? null,
     user_agent_hash: userAgentHash,
+    resolved_contact_id: resolvedContactId,
   })
+
+  // If we resolved a contact and the UTM is linked to a post, record an assist touch
+  if (resolvedContactId && utm.post_id) {
+    await supabase.from('content_attribution').upsert(
+      {
+        contact_id: resolvedContactId,
+        post_id: utm.post_id,
+        touch_type: 'assist',
+        touched_at: new Date().toISOString(),
+      },
+      { onConflict: 'contact_id,post_id,touch_type' }
+    )
+  }
 
   await appendAuditLog(supabase, {
     event_type: 'utm-click',

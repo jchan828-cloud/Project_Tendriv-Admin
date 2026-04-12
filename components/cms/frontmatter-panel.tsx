@@ -3,6 +3,7 @@
 /** MK8-CMS-002: Front-matter panel for post editor */
 
 import { BlogPost, BuyerStage, BuyerStageValues, ContentType, ContentTypeValues } from '@/lib/types/cms'
+import { GateConfig } from '@/components/cms/gate-config'
 
 function toBuyerStage(val: string): BuyerStage | null {
   return BuyerStageValues.includes(val as never) ? (val as never) : null // ok-as
@@ -172,20 +173,16 @@ export function FrontmatterPanel({ post, onChange }: FrontmatterPanelProps) {
         />
       </div>
 
-      {/* Gated Content Toggle */}
-      <div className="flex items-center gap-3">
-        <label className="text-label-sm" htmlFor="fm-gated">Gated Content</label>
-        <input
-          id="fm-gated"
-          type="checkbox"
-          className="h-4 w-4 accent-[var(--jade)]"
-          checked={post.is_gated}
-          onChange={(e) => onChange({ is_gated: e.target.checked })}
-        />
-      </div>
+      {/* Gating — content-upgrade model + legacy full-post gate */}
+      <GateConfig
+        enabled={post.is_gated}
+        onToggle={(val) => onChange({ is_gated: val })}
+        assetIds={post.gate_asset_ids ?? []}
+        onAssetIdsChange={(ids) => onChange({ gate_asset_ids: ids })}
+      />
 
-      {/* Gate CTA — shown when gated */}
-      {post.is_gated && (
+      {/* Gate CTA — shown when gated or has bonus assets */}
+      {(post.is_gated || (post.gate_asset_ids ?? []).length > 0) && (
         <div>
           <label className="text-label-sm mb-1 block" htmlFor="fm-cta">Gate CTA Label</label>
           <input
