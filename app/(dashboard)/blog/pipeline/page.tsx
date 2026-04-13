@@ -4,6 +4,7 @@ import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supab
 import { TopicTable } from '@/components/blog/topic-table'
 import { AddTopicForm } from '@/components/blog/add-topic-form'
 import { GenerationSettingsForm } from '@/components/blog/generation-settings-form'
+import { GenerateDraftsButton } from '@/components/blog/generate-drafts-button'
 import type { BlogPipelineTopic, BlogSettings } from '@/lib/types/blog-settings'
 
 export default async function BlogSettingsPage() {
@@ -35,7 +36,10 @@ export default async function BlogSettingsPage() {
 
   return (
     <div className="space-y-8">
-      <h1 className="text-heading-md">Blog pipeline</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-heading-md">Blog pipeline</h1>
+        <GenerateDraftsButton />
+      </div>
 
       <section>
         <h2 className="text-heading-sm mb-4">Generation settings</h2>

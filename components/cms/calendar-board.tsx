@@ -2,8 +2,9 @@
 
 /** MK8-CMS-003: Content calendar — Kanban + List views */
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { PostStatus, BuyerStageValues } from '@/lib/types/cms'
 import type { BuyerStage, ContentType } from '@/lib/types/cms'
 
@@ -45,9 +46,22 @@ function statusBadge(status: string): string {
 }
 
 export function CalendarBoard({ posts }: CalendarBoardProps) {
+  const router = useRouter()
   const [view, setView] = useState<ViewMode>('kanban')
   const [statusFilter, setStatusFilter] = useState<string>('All')
   const [stageFilter, setStageFilter] = useState<string>('All')
+  const [deleting, setDeleting] = useState<string | null>(null)
+
+  const handleDelete = useCallback(async (id: string, title: string) => {
+    if (!confirm(`Delete "${title}"? This cannot be undone.`)) return
+    setDeleting(id)
+    try {
+      const res = await fetch(`/api/marketing/posts/${id}`, { method: 'DELETE' })
+      if (res.ok) router.refresh()
+      else alert('Failed to delete post.')
+    } catch { alert('Failed to delete post.') }
+    finally { setDeleting(null) }
+  }, [router])
 
   // Persist view preference
   useEffect(() => {
@@ -111,7 +125,7 @@ export function CalendarBoard({ posts }: CalendarBoardProps) {
 
       {/* Views */}
       {view === 'kanban' ? (
-        <KanbanView posts={posts} />
+        <KanbanView posts={posts} deleting={deleting} onDelete={handleDelete} />
       ) : (
         <ListView
           posts={filteredPosts}
@@ -119,13 +133,15 @@ export function CalendarBoard({ posts }: CalendarBoardProps) {
           stageFilter={stageFilter}
           onStatusFilter={setStatusFilter}
           onStageFilter={setStageFilter}
+          deleting={deleting}
+          onDelete={handleDelete}
         />
       )}
     </div>
   )
 }
 
-function KanbanView({ posts }: { posts: CalendarPost[] }) {
+function KanbanView({ posts, deleting, onDelete }: { posts: CalendarPost[]; deleting: string | null; onDelete: (id: string, title: string) => void }) {
   return (
     <div className="grid grid-cols-4 gap-4">
       {KANBAN_COLUMNS.map((col) => {
@@ -138,23 +154,29 @@ function KanbanView({ posts }: { posts: CalendarPost[] }) {
             </div>
             <div className="space-y-2">
               {colPosts.map((p) => (
-                <Link
-                  key={p.id}
-                  href={`/posts/${p.id}`}
-                  className="card block p-3 hover:bg-[var(--surface-hover)]"
-                >
-                  <p className="text-heading-sm mb-1 truncate">{p.title}</p>
-                  <div className="flex flex-wrap gap-1">
-                    {p.buyer_stage && <span className="badge badge-jade">{p.buyer_stage}</span>}
-                    {p.content_type && <span className="badge badge-neutral">{p.content_type}</span>}
-                  </div>
-                  {p.target_keyword && (
-                    <p className="text-mono-xs mt-1 text-[var(--text-muted)] truncate">{p.target_keyword}</p>
-                  )}
-                  <p className="text-body-xs mt-1 text-[var(--text-label)]">
-                    {new Date(p.updated_at).toLocaleDateString('en-CA')}
-                  </p>
-                </Link>
+                <div key={p.id} className="card p-3 hover:bg-[var(--surface-hover)] group relative">
+                  <Link href={`/posts/${p.id}`} className="block">
+                    <p className="text-heading-sm mb-1 truncate">{p.title}</p>
+                    <div className="flex flex-wrap gap-1">
+                      {p.buyer_stage && <span className="badge badge-jade">{p.buyer_stage}</span>}
+                      {p.content_type && <span className="badge badge-neutral">{p.content_type}</span>}
+                    </div>
+                    {p.target_keyword && (
+                      <p className="text-mono-xs mt-1 text-[var(--text-muted)] truncate">{p.target_keyword}</p>
+                    )}
+                    <p className="text-body-xs mt-1 text-[var(--text-label)]">
+                      {new Date(p.updated_at).toLocaleDateString('en-CA')}
+                    </p>
+                  </Link>
+                  <button
+                    onClick={() => onDelete(p.id, p.title)}
+                    disabled={deleting === p.id}
+                    className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity text-[var(--status-danger)] hover:bg-[var(--status-danger)]/10 rounded px-1.5 py-0.5 text-body-xs"
+                    title="Delete post"
+                  >
+                    {deleting === p.id ? '...' : 'Delete'}
+                  </button>
+                </div>
               ))}
               {colPosts.length === 0 && (
                 <p className="text-body-xs text-center text-[var(--text-label)] py-4">No posts</p>
@@ -173,12 +195,16 @@ function ListView({
   stageFilter,
   onStatusFilter,
   onStageFilter,
+  deleting,
+  onDelete,
 }: {
   posts: CalendarPost[]
   statusFilter: string
   stageFilter: string
   onStatusFilter: (v: string) => void
   onStageFilter: (v: string) => void
+  deleting: string | null
+  onDelete: (id: string, title: string) => void
 }) {
   return (
     <div>
@@ -220,12 +246,13 @@ function ListView({
               <th className="text-label-sm px-4 py-3">Scheduled</th>
               <th className="text-label-sm px-4 py-3">Words</th>
               <th className="text-label-sm px-4 py-3">Updated</th>
+              <th className="text-label-sm px-4 py-3"></th>
             </tr>
           </thead>
           <tbody>
             {posts.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-4 py-8 text-center text-[var(--text-muted)]">No posts found.</td>
+                <td colSpan={8} className="px-4 py-8 text-center text-[var(--text-muted)]">No posts found.</td>
               </tr>
             )}
             {posts.map((p) => (
@@ -250,6 +277,15 @@ function ListView({
                 <td className="px-4 py-3 text-mono-xs">{p.word_count}</td>
                 <td className="px-4 py-3 text-mono-xs">
                   {new Date(p.updated_at).toLocaleDateString('en-CA')}
+                </td>
+                <td className="px-4 py-3">
+                  <button
+                    onClick={() => onDelete(p.id, p.title)}
+                    disabled={deleting === p.id}
+                    className="text-body-xs text-[var(--status-danger)] hover:underline disabled:opacity-50"
+                  >
+                    {deleting === p.id ? 'Deleting...' : 'Delete'}
+                  </button>
                 </td>
               </tr>
             ))}
