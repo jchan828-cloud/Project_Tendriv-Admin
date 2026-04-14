@@ -1,6 +1,8 @@
 'use client'
 
-/** MK8-CMS-003: Content calendar — Kanban + List views */
+/** MK8-CMS-003: Content calendar — Kanban + List views
+ *  SEO-009: Adds queue states (queued / generating / failed) with retry.
+ */
 
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
@@ -19,15 +21,19 @@ export type CalendarPost = {
   word_count: number
   scheduled_at: string | null
   updated_at: string
+  generation_error: string | null
+  generation_attempts: number
 }
 
 type ViewMode = 'kanban' | 'list'
 
 const KANBAN_COLUMNS: { status: PostStatus; label: string }[] = [
-  { status: 'draft', label: 'Draft' },
+  { status: 'queued', label: 'Queued' },
+  { status: 'generating', label: 'Generating' },
   { status: 'review', label: 'Review' },
   { status: 'approved', label: 'Approved' },
   { status: 'published', label: 'Published' },
+  { status: 'failed', label: 'Failed' },
 ]
 
 interface CalendarBoardProps {
@@ -36,11 +42,15 @@ interface CalendarBoardProps {
 
 function statusBadge(status: string): string {
   switch (status) {
+    case 'queued': return 'badge-neutral'
+    case 'generating': return 'badge-jade'
     case 'draft': return 'badge-neutral'
     case 'review': return 'badge-warning'
     case 'approved': return 'badge-jade'
+    case 'scheduled': return 'badge-jade'
     case 'published': return 'badge-success'
     case 'archived': return 'badge-purple'
+    case 'failed': return 'badge-danger'
     default: return 'badge-neutral'
   }
 }
@@ -50,17 +60,30 @@ export function CalendarBoard({ posts }: CalendarBoardProps) {
   const [view, setView] = useState<ViewMode>('kanban')
   const [statusFilter, setStatusFilter] = useState<string>('All')
   const [stageFilter, setStageFilter] = useState<string>('All')
-  const [deleting, setDeleting] = useState<string | null>(null)
+  const [busy, setBusy] = useState<string | null>(null)
 
   const handleDelete = useCallback(async (id: string, title: string) => {
     if (!confirm(`Delete "${title}"? This cannot be undone.`)) return
-    setDeleting(id)
+    setBusy(id)
     try {
       const res = await fetch(`/api/marketing/posts/${id}`, { method: 'DELETE' })
       if (res.ok) router.refresh()
       else alert('Failed to delete post.')
     } catch { alert('Failed to delete post.') }
-    finally { setDeleting(null) }
+    finally { setBusy(null) }
+  }, [router])
+
+  const handleRetry = useCallback(async (id: string) => {
+    setBusy(id)
+    try {
+      const res = await fetch(`/api/blog/posts/${id}/retry`, { method: 'POST' })
+      if (res.ok) router.refresh()
+      else {
+        const data = await res.json().catch(() => ({}))
+        alert(data.error ?? 'Retry failed.')
+      }
+    } catch { alert('Retry failed.') }
+    finally { setBusy(null) }
   }, [router])
 
   // Persist view preference
@@ -125,7 +148,7 @@ export function CalendarBoard({ posts }: CalendarBoardProps) {
 
       {/* Views */}
       {view === 'kanban' ? (
-        <KanbanView posts={posts} deleting={deleting} onDelete={handleDelete} />
+        <KanbanView posts={posts} busy={busy} onDelete={handleDelete} onRetry={handleRetry} />
       ) : (
         <ListView
           posts={filteredPosts}
@@ -133,17 +156,24 @@ export function CalendarBoard({ posts }: CalendarBoardProps) {
           stageFilter={stageFilter}
           onStatusFilter={setStatusFilter}
           onStageFilter={setStageFilter}
-          deleting={deleting}
+          busy={busy}
           onDelete={handleDelete}
+          onRetry={handleRetry}
         />
       )}
     </div>
   )
 }
 
-function KanbanView({ posts, deleting, onDelete }: { posts: CalendarPost[]; deleting: string | null; onDelete: (id: string, title: string) => void }) {
+interface RowActionProps {
+  busy: string | null
+  onDelete: (id: string, title: string) => void
+  onRetry: (id: string) => void
+}
+
+function KanbanView({ posts, busy, onDelete, onRetry }: { posts: CalendarPost[] } & RowActionProps) {
   return (
-    <div className="grid grid-cols-4 gap-4">
+    <div className="grid grid-cols-2 gap-4 lg:grid-cols-3 xl:grid-cols-6">
       {KANBAN_COLUMNS.map((col) => {
         const colPosts = posts.filter((p) => p.status === col.status)
         return (
@@ -160,22 +190,42 @@ function KanbanView({ posts, deleting, onDelete }: { posts: CalendarPost[]; dele
                     <div className="flex flex-wrap gap-1">
                       {p.buyer_stage && <span className="badge badge-jade">{p.buyer_stage}</span>}
                       {p.content_type && <span className="badge badge-neutral">{p.content_type}</span>}
+                      {p.generation_attempts > 0 && p.status !== 'review' && p.status !== 'published' && (
+                        <span className="badge badge-neutral">try {p.generation_attempts}</span>
+                      )}
                     </div>
                     {p.target_keyword && (
                       <p className="text-mono-xs mt-1 text-[var(--text-muted)] truncate">{p.target_keyword}</p>
+                    )}
+                    {p.status === 'failed' && p.generation_error && (
+                      <p className="text-mono-xs mt-2 text-[var(--status-danger)] line-clamp-2" title={p.generation_error}>
+                        {p.generation_error}
+                      </p>
                     )}
                     <p className="text-body-xs mt-1 text-[var(--text-label)]">
                       {new Date(p.updated_at).toLocaleDateString('en-CA')}
                     </p>
                   </Link>
-                  <button
-                    onClick={() => onDelete(p.id, p.title)}
-                    disabled={deleting === p.id}
-                    className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity text-[var(--status-danger)] hover:bg-[var(--status-danger)]/10 rounded px-1.5 py-0.5 text-body-xs"
-                    title="Delete post"
-                  >
-                    {deleting === p.id ? '...' : 'Delete'}
-                  </button>
+                  <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    {p.status === 'failed' && (
+                      <button
+                        onClick={() => onRetry(p.id)}
+                        disabled={busy === p.id}
+                        className="text-[var(--text-link)] hover:bg-[var(--text-link)]/10 rounded px-1.5 py-0.5 text-body-xs"
+                        title="Retry generation"
+                      >
+                        {busy === p.id ? '...' : 'Retry'}
+                      </button>
+                    )}
+                    <button
+                      onClick={() => onDelete(p.id, p.title)}
+                      disabled={busy === p.id}
+                      className="text-[var(--status-danger)] hover:bg-[var(--status-danger)]/10 rounded px-1.5 py-0.5 text-body-xs"
+                      title="Delete post"
+                    >
+                      {busy === p.id ? '...' : 'Delete'}
+                    </button>
+                  </div>
                 </div>
               ))}
               {colPosts.length === 0 && (
@@ -195,17 +245,16 @@ function ListView({
   stageFilter,
   onStatusFilter,
   onStageFilter,
-  deleting,
+  busy,
   onDelete,
+  onRetry,
 }: {
   posts: CalendarPost[]
   statusFilter: string
   stageFilter: string
   onStatusFilter: (v: string) => void
   onStageFilter: (v: string) => void
-  deleting: string | null
-  onDelete: (id: string, title: string) => void
-}) {
+} & RowActionProps) {
   return (
     <div>
       {/* Filters */}
@@ -216,11 +265,15 @@ function ListView({
           onChange={(e) => onStatusFilter(e.target.value)}
         >
           <option>All</option>
+          <option value="queued">Queued</option>
+          <option value="generating">Generating</option>
           <option value="draft">Draft</option>
           <option value="review">Review</option>
           <option value="approved">Approved</option>
+          <option value="scheduled">Scheduled</option>
           <option value="published">Published</option>
           <option value="archived">Archived</option>
+          <option value="failed">Failed</option>
         </select>
         <select
           className="input-base py-1.5 text-body-sm w-auto"
@@ -243,7 +296,6 @@ function ListView({
               <th className="text-label-sm px-4 py-3">Status</th>
               <th className="text-label-sm px-4 py-3">Stage</th>
               <th className="text-label-sm px-4 py-3">Type</th>
-              <th className="text-label-sm px-4 py-3">Scheduled</th>
               <th className="text-label-sm px-4 py-3">Words</th>
               <th className="text-label-sm px-4 py-3">Updated</th>
               <th className="text-label-sm px-4 py-3"></th>
@@ -252,7 +304,7 @@ function ListView({
           <tbody>
             {posts.length === 0 && (
               <tr>
-                <td colSpan={8} className="px-4 py-8 text-center text-[var(--text-muted)]">No posts found.</td>
+                <td colSpan={7} className="px-4 py-8 text-center text-[var(--text-muted)]">No posts found.</td>
               </tr>
             )}
             {posts.map((p) => (
@@ -261,9 +313,17 @@ function ListView({
                   <Link href={`/posts/${p.id}`} className="text-body-md font-medium text-[var(--text-heading)] hover:underline">
                     {p.title}
                   </Link>
+                  {p.status === 'failed' && p.generation_error && (
+                    <p className="text-mono-xs mt-1 text-[var(--status-danger)] line-clamp-2" title={p.generation_error}>
+                      {p.generation_error}
+                    </p>
+                  )}
                 </td>
                 <td className="px-4 py-3">
                   <span className={`badge ${statusBadge(p.status)}`}>{p.status}</span>
+                  {p.generation_attempts > 0 && p.status !== 'review' && p.status !== 'published' && (
+                    <span className="ml-1 text-mono-xs text-[var(--text-muted)]">×{p.generation_attempts}</span>
+                  )}
                 </td>
                 <td className="px-4 py-3">
                   {p.buyer_stage && <span className="badge badge-jade">{p.buyer_stage}</span>}
@@ -271,20 +331,26 @@ function ListView({
                 <td className="px-4 py-3">
                   {p.content_type && <span className="badge badge-neutral">{p.content_type}</span>}
                 </td>
-                <td className="px-4 py-3 text-mono-xs">
-                  {p.scheduled_at ? new Date(p.scheduled_at).toLocaleDateString('en-CA') : '—'}
-                </td>
                 <td className="px-4 py-3 text-mono-xs">{p.word_count}</td>
                 <td className="px-4 py-3 text-mono-xs">
                   {new Date(p.updated_at).toLocaleDateString('en-CA')}
                 </td>
-                <td className="px-4 py-3">
+                <td className="px-4 py-3 whitespace-nowrap">
+                  {p.status === 'failed' && (
+                    <button
+                      onClick={() => onRetry(p.id)}
+                      disabled={busy === p.id}
+                      className="text-body-xs text-[var(--text-link)] hover:underline disabled:opacity-50 mr-2"
+                    >
+                      {busy === p.id ? '...' : 'Retry'}
+                    </button>
+                  )}
                   <button
                     onClick={() => onDelete(p.id, p.title)}
-                    disabled={deleting === p.id}
+                    disabled={busy === p.id}
                     className="text-body-xs text-[var(--status-danger)] hover:underline disabled:opacity-50"
                   >
-                    {deleting === p.id ? 'Deleting...' : 'Delete'}
+                    {busy === p.id ? '...' : 'Delete'}
                   </button>
                 </td>
               </tr>

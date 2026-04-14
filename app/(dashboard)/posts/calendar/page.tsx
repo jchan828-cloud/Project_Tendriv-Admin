@@ -8,7 +8,7 @@ export default async function CalendarPage() {
 
   const { data: posts } = await supabase
     .from('blog_posts')
-    .select('id, title, status, buyer_stage, content_type, target_keyword, word_count, scheduled_at, updated_at')
+    .select('id, title, status, buyer_stage, content_type, target_keyword, word_count, scheduled_at, updated_at, generation_error, generation_attempts')
     .order('updated_at', { ascending: false })
 
   return (

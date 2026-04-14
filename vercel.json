@@ -6,6 +6,8 @@
   "crons": [
     { "path": "/api/admin/psib-match", "schedule": "0 8 * * *" },
     { "path": "/api/admin/geo-match", "schedule": "0 10 * * *" },
-    { "path": "/api/marketing/score/cron", "schedule": "0 6 * * *" }
+    { "path": "/api/marketing/score/cron", "schedule": "0 6 * * *" },
+    { "path": "/api/blog/enqueue", "schedule": "0 13 * * *" },
+    { "path": "/api/blog/worker", "schedule": "*/5 * * * *" }
   ]
 }

@@ -12,7 +12,7 @@ export const ContentTypeValues = ['blog', 'case-study', 'guide', 'whitepaper'] a
 export type ContentType = (typeof ContentTypeValues)[number]
 export const ContentTypeSchema = z.enum(ContentTypeValues)
 
-export const PostStatusValues = ['draft', 'review', 'approved', 'published', 'archived'] as const
+export const PostStatusValues = ['queued', 'generating', 'draft', 'review', 'approved', 'scheduled', 'published', 'archived', 'failed'] as const
 export type PostStatus = (typeof PostStatusValues)[number]
 export const PostStatusSchema = z.enum(PostStatusValues)
 
@@ -44,7 +44,7 @@ export type BlogPost = {
    * `is_gated: true` which hides the entire post from crawlers.
    */
   gate_asset_ids: string[]
-  author_id: string
+  author_id: string | null
   reviewer_id: string | null
   reviewer_notes: string | null
   published_at: string | null
@@ -53,6 +53,11 @@ export type BlogPost = {
   word_count: number
   reading_time_minutes: number
   jsonld_override: Record<string, unknown> | null
+  /** AI generation tracking */
+  topic_id: string | null
+  generation_error: string | null
+  generation_attempts: number
+  generated_at: string | null
   created_at: string
   updated_at: string
 }

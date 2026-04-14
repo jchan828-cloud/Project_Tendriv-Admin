@@ -1,8 +1,13 @@
-/** MK8-CMS-003: Posts page — content calendar + status workflow */
+/** MK8-CMS-003: Posts page — content calendar + status workflow.
+ *  SEO-009: Surfaces queue states (queued / generating / failed) too.
+ */
 
 import { createServiceRoleClient } from '@/lib/supabase/server'
 import { CalendarBoard } from '@/components/cms/calendar-board'
 import { BlogPost } from '@/lib/types/cms'
+
+// Disable caching so newly-generated drafts appear immediately on refresh.
+export const dynamic = 'force-dynamic'
 
 export default async function PostsPage() {
   const supabase = await createServiceRoleClient()
@@ -14,23 +19,24 @@ export default async function PostsPage() {
 
   const typedPosts: BlogPost[] = posts ?? []
 
-  // Summary counts
   const counts = {
-    draft: typedPosts.filter((p) => p.status === 'draft').length,
+    queued: typedPosts.filter((p) => p.status === 'queued').length,
+    generating: typedPosts.filter((p) => p.status === 'generating').length,
     review: typedPosts.filter((p) => p.status === 'review').length,
-    approved: typedPosts.filter((p) => p.status === 'approved').length,
     published: typedPosts.filter((p) => p.status === 'published').length,
+    failed: typedPosts.filter((p) => p.status === 'failed').length,
   }
 
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-heading-lg">Content Calendar</h1>
-        <div className="flex gap-2">
-          <span className="badge badge-neutral">{counts.draft} drafts</span>
+        <div className="flex flex-wrap gap-2">
+          {counts.queued > 0 && <span className="badge badge-neutral">{counts.queued} queued</span>}
+          {counts.generating > 0 && <span className="badge badge-jade">{counts.generating} generating</span>}
           <span className="badge badge-warning">{counts.review} in review</span>
-          <span className="badge badge-jade">{counts.approved} approved</span>
           <span className="badge badge-success">{counts.published} published</span>
+          {counts.failed > 0 && <span className="badge badge-danger">{counts.failed} failed</span>}
         </div>
       </div>
       <CalendarBoard posts={typedPosts} />
