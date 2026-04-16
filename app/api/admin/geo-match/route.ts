@@ -86,7 +86,7 @@ function computeUnspscScore(
 
 const BATCH_SIZE = 500;
 
-export async function POST(request: NextRequest) {
+async function handler(request: NextRequest) {
   /* ── Auth: validate cron secret ─────────────────────────── */
   const authHeader = request.headers.get('authorization');
   const cronSecret = process.env.CRON_SECRET;
@@ -190,3 +190,5 @@ export async function POST(request: NextRequest) {
     errors: upsertErrors,
   });
 }
+
+export { handler as GET, handler as POST }
