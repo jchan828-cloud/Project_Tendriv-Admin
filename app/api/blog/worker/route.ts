@@ -17,7 +17,7 @@
  */
 
 import { NextResponse, type NextRequest } from 'next/server'
-import { createServiceRoleClient } from '@/lib/supabase/server'
+import { createServiceRoleClient, createServerSupabaseClient } from '@/lib/supabase/server'
 import { callClaudeMessages } from '@/lib/blog/claude-call'
 import { buildBlogPrompt, calculateReadingMinutes, countWords } from '@/lib/blog/claude-prompt'
 
@@ -38,16 +38,19 @@ interface ClaimedPost {
   generation_attempts: number
 }
 
-function authorize(req: NextRequest, cronSecret: string | undefined): boolean {
-  if (!cronSecret) return false
-  if (req.headers.get('authorization') === `Bearer ${cronSecret}`) return true
-  if (req.headers.get('x-cron-secret') === cronSecret) return true
-  return false
+async function authorize(req: NextRequest, cronSecret: string | undefined): Promise<boolean> {
+  if (cronSecret) {
+    if (req.headers.get('authorization') === `Bearer ${cronSecret}`) return true
+    if (req.headers.get('x-cron-secret') === cronSecret) return true
+  }
+  const authClient = await createServerSupabaseClient()
+  const { data: { user } } = await authClient.auth.getUser()
+  return user !== null
 }
 
 async function handler(req: NextRequest) {
   const cronSecret = process.env.CRON_SECRET
-  if (!authorize(req, cronSecret)) {
+  if (!(await authorize(req, cronSecret))) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

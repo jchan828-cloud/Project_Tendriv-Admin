@@ -4,6 +4,7 @@
 
 import { createServiceRoleClient } from '@/lib/supabase/server'
 import { CalendarBoard } from '@/components/cms/calendar-board'
+import { RunWorkerButton } from '@/components/blog/run-worker-button'
 import { BlogPost } from '@/lib/types/cms'
 
 // Disable caching so newly-generated drafts appear immediately on refresh.
@@ -39,6 +40,11 @@ export default async function PostsPage() {
           {counts.failed > 0 && <span className="badge badge-danger">{counts.failed} failed</span>}
         </div>
       </div>
+      {counts.queued > 0 && (
+        <div className="mb-4">
+          <RunWorkerButton />
+        </div>
+      )}
       <CalendarBoard posts={typedPosts} />
     </div>
   )
