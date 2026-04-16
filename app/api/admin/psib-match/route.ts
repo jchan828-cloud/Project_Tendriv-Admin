@@ -12,7 +12,7 @@ type ScoutNoticeRow = {
 /** Pending upsert row (without server-generated columns) */
 type MatchUpsertRow = Pick<OutreachMatch, 'contact_id' | 'notice_id' | 'match_score' | 'matched_unspsc'>;
 
-export async function POST(request: NextRequest) {
+async function handler(request: NextRequest) {
   /* ── Auth: validate cron secret ─────────────────────────── */
   const authHeader = request.headers.get('authorization');
   const cronSecret = process.env.CRON_SECRET;
@@ -115,3 +115,5 @@ export async function POST(request: NextRequest) {
   /* ── 6. Return result ───────────────────────────────────── */
   return NextResponse.json({ success: true, matched: upsertRows.length });
 }
+
+export { handler as GET, handler as POST }
