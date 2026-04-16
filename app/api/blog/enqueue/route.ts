@@ -34,16 +34,15 @@ interface EnqueueOptions {
 }
 
 async function authorize(req: NextRequest): Promise<boolean> {
-  // Vercel cron header bypasses auth
-  if (req.headers.get('x-vercel-cron') === '1') return true
+  const cronSecret = process.env.CRON_SECRET
+  if (cronSecret && req.headers.get('authorization') === `Bearer ${cronSecret}`) return true
 
-  // Otherwise require an authenticated user (manual trigger from admin UI)
   const authClient = await createServerSupabaseClient()
   const { data: { user } } = await authClient.auth.getUser()
   return user !== null
 }
 
-export async function POST(req: NextRequest) {
+async function handler(req: NextRequest) {
   if (!(await authorize(req))) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
@@ -142,3 +141,5 @@ export async function POST(req: NextRequest) {
     posts: inserted ?? [],
   })
 }
+
+export { handler as GET, handler as POST }
