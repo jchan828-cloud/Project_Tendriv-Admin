@@ -39,14 +39,13 @@ interface ClaimedPost {
 }
 
 function authorize(req: NextRequest, cronSecret: string | undefined): boolean {
-  // Allow Vercel cron header
-  if (req.headers.get('x-vercel-cron') === '1') return true
-  // Allow internal calls with the cron secret
-  if (cronSecret && req.headers.get('x-cron-secret') === cronSecret) return true
+  if (!cronSecret) return false
+  if (req.headers.get('authorization') === `Bearer ${cronSecret}`) return true
+  if (req.headers.get('x-cron-secret') === cronSecret) return true
   return false
 }
 
-export async function POST(req: NextRequest) {
+async function handler(req: NextRequest) {
   const cronSecret = process.env.CRON_SECRET
   if (!authorize(req, cronSecret)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -146,3 +145,5 @@ async function markFailed(
     })
     .eq('id', postId)
 }
+
+export { handler as GET, handler as POST }
