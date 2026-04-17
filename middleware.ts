@@ -22,8 +22,13 @@ export async function middleware(request: NextRequest) {
       },
     },
   );
-  // Public API routes — skip auth redirect
-  if (request.nextUrl.pathname.startsWith('/api/marketing/')) {
+  // Public API routes — skip auth redirect.
+  // /api/drains/* endpoints authenticate via HMAC signature (Vercel) or
+  // a shared bearer token (Supabase), not via session cookies.
+  if (
+    request.nextUrl.pathname.startsWith('/api/marketing/') ||
+    request.nextUrl.pathname.startsWith('/api/drains/')
+  ) {
     return response;
   }
 
