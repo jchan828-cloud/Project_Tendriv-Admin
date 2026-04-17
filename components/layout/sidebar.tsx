@@ -89,6 +89,8 @@ const allSections: NavSection[] = [
   },
 ]
 
+const systemHealthItem: NavItem = { label: 'System health', href: '/system-health' }
+
 interface SidebarProps {
   readonly modules?: ModuleKey[]
   readonly role?: UserRole
@@ -97,9 +99,14 @@ interface SidebarProps {
 export function Sidebar({ modules, role }: SidebarProps) {
   const pathname = usePathname()
 
-  const visibleSections = modules
+  const visibleSections = (modules
     ? allSections.filter((s) => modules.includes(s.key))
     : allSections
+  ).map((section) =>
+    section.key === 'system' && role === 'admin'
+      ? { ...section, items: [...section.items, systemHealthItem] }
+      : section,
+  )
 
   const settingsItems: NavItem[] = [
     { label: 'Profile', href: '/settings/profile' },
