@@ -33,6 +33,7 @@ const allSections: NavSection[] = [
       { label: 'Calendar', href: '/posts/calendar' },
       { label: 'Drafts', href: '/drafts' },
       { label: 'Media', href: '/media' },
+      { label: 'Blog pipeline', href: '/blog/pipeline' },
     ],
   },
   {
@@ -40,9 +41,9 @@ const allSections: NavSection[] = [
     title: 'Marketing',
     items: [
       { label: 'Analytics', href: '/analytics' },
-      { label: 'Funnel', href: '/funnel' },
-      { label: 'UTMs', href: '/utms' },
-      { label: 'Agencies', href: '/agencies' },
+      { label: 'Funnel', href: '/analytics/funnel' },
+      { label: 'UTMs', href: '/analytics/utms' },
+      { label: 'Agencies', href: '/analytics/agencies' },
     ],
   },
   {
@@ -66,6 +67,7 @@ const allSections: NavSection[] = [
     title: 'Finance',
     items: [
       { label: 'Overview', href: '/finance' },
+      { label: 'Analytics', href: '/finance/analytics' },
       { label: 'Vendor Spend', href: '/finance/billing' },
       { label: 'Customer Revenue', href: '/finance/customers' },
       { label: 'Top Users', href: '/finance/top-users' },
