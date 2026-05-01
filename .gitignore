@@ -32,3 +32,10 @@ next-env.d.ts
 
 # git worktrees
 .worktrees/
+
+# tooling artifacts
+.playwright-mcp/
+supabase/.temp/
+
+# local design docs
+docs/
