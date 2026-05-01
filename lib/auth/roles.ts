@@ -3,7 +3,7 @@
 import { SupabaseClient } from '@supabase/supabase-js'
 
 export type UserRole = 'admin' | 'editor' | 'analyst' | 'crm-manager'
-export type ModuleKey = 'content' | 'analytics' | 'crm' | 'system'
+export type ModuleKey = 'content' | 'analytics' | 'crm' | 'sales' | 'finance' | 'feedback' | 'system'
 
 export interface UserRoleRecord {
   role: UserRole
@@ -13,7 +13,7 @@ export interface UserRoleRecord {
 /** Default: full access for users without an explicit role row */
 const DEFAULT_ROLE: UserRoleRecord = {
   role: 'admin',
-  modules: ['content', 'analytics', 'crm', 'system'],
+  modules: ['content', 'analytics', 'crm', 'sales', 'finance', 'feedback', 'system'],
 }
 
 export async function getUserRole(

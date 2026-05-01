@@ -1,8 +1,6 @@
-/** Feedback dashboard — review, triage, and respond to customer feedback */
-
 import { createServiceRoleClient, createServerSupabaseClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import { FeedbackDashboard } from '@/components/feedback/feedback-dashboard'
+import { FeedbackInbox } from '@/components/feedback/feedback-inbox'
 
 export default async function FeedbackPage() {
   const authClient = await createServerSupabaseClient()
@@ -11,75 +9,51 @@ export default async function FeedbackPage() {
 
   const supabase = await createServiceRoleClient()
 
-  const [
-    { data: feedbackItems, count },
-    { data: stats },
-  ] = await Promise.all([
+  const now = new Date()
+  const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString()
+
+  const [{ data: items }, { data: stats }] = await Promise.all([
     supabase
       .from('feedback')
-      .select('*, feedback_responses(id, body, is_public, created_at, author_id)', { count: 'exact' })
+      .select('id, source, category, sentiment, rating, priority, status, body, title, submitter_email, submitter_name, created_at')
+      .order('priority', { ascending: true })
       .order('created_at', { ascending: false })
-      .limit(50),
+      .limit(100),
     supabase
       .from('feedback')
-      .select('status, sentiment, category'),
+      .select('status, priority, rating, created_at, submitter_email'),
   ])
 
-  // Compute stats
-  const statusCounts: Record<string, number> = {}
-  const sentimentCounts: Record<string, number> = {}
-  const categoryCounts: Record<string, number> = {}
-  for (const row of stats ?? []) {
-    const r = row as Record<string, unknown>
-    const s = (r.status as string) ?? 'new'
-    statusCounts[s] = (statusCounts[s] ?? 0) + 1
-    if (r.sentiment) {
-      const sent = r.sentiment as string
-      sentimentCounts[sent] = (sentimentCounts[sent] ?? 0) + 1
-    }
-    const cat = (r.category as string) ?? 'general'
-    categoryCounts[cat] = (categoryCounts[cat] ?? 0) + 1
+  const openStatuses = ['new', 'reviewed', 'in-progress']
+  const openCount = (stats ?? []).filter((r) => openStatuses.includes(r.status as string)).length
+  const criticalCount = (stats ?? []).filter((r) => r.priority === 'critical').length
+  const customerCount = (stats ?? []).filter((r) => r.submitter_email != null).length
+  const weekRatings = (stats ?? [])
+    .filter((r) => r.rating != null && r.created_at >= weekAgo)
+    .map((r) => r.rating as number)
+  const avgRating = weekRatings.length > 0
+    ? (weekRatings.reduce((s, v) => s + v, 0) / weekRatings.length).toFixed(1)
+    : null
+
+  type FeedbackItem = {
+    id: string
+    source: string
+    category: string
+    sentiment: string | null
+    rating: number | null
+    priority: string
+    status: string
+    body: string
+    title: string | null
+    submitter_email: string | null
+    submitter_name: string | null
+    created_at: string
   }
 
   return (
-    <div style={{ padding: '28px 32px', maxWidth: 1200 }}>
-      <div style={{ marginBottom: 24 }}>
-        <h1 className="text-heading-xl" style={{ marginBottom: 4 }}>Customer Feedback</h1>
-        <p className="text-body-sm" style={{ color: 'var(--text-muted)' }}>
-          Review, triage, and respond to feedback from customers.
-        </p>
-      </div>
-      <FeedbackDashboard
-        items={(feedbackItems ?? []).map((f) => {
-          const r = f as Record<string, unknown>
-          return {
-            id: r.id as string,
-            source: r.source as string,
-            page_url: r.page_url as string | null,
-            submitter_name: r.submitter_name as string | null,
-            submitter_email: r.submitter_email as string | null,
-            category: r.category as string,
-            sentiment: r.sentiment as string | null,
-            rating: r.rating as number | null,
-            title: r.title as string | null,
-            body: r.body as string,
-            status: r.status as string,
-            priority: r.priority as string,
-            internal_notes: r.internal_notes as string | null,
-            created_at: r.created_at as string,
-            responses: ((r.feedback_responses as Record<string, unknown>[]) ?? []).map((resp) => ({
-              id: resp.id as string,
-              body: resp.body as string,
-              is_public: resp.is_public as boolean,
-              created_at: resp.created_at as string,
-            })),
-          }
-        })}
-        totalCount={count ?? 0}
-        statusCounts={statusCounts}
-        sentimentCounts={sentimentCounts}
-        categoryCounts={categoryCounts}
-      />
-    </div>
+    <FeedbackInbox
+      items={(items ?? []) as FeedbackItem[]}
+      counts={{ open: openCount, critical: criticalCount, fromCustomers: customerCount, avgRating }}
+    />
   )
 }

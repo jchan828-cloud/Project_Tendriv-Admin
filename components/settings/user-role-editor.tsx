@@ -13,12 +13,16 @@ export interface UserRow {
   isCurrentUser: boolean
 }
 
-const ALL_MODULES: ModuleKey[] = ['content', 'analytics', 'crm', 'system']
+const ALL_MODULES: ModuleKey[] = ['content', 'analytics', 'crm', 'sales', 'finance', 'feedback', 'system']
+const MODULE_LABEL: Record<ModuleKey, string> = {
+  content: 'Content', analytics: 'Analytics', crm: 'CRM',
+  sales: 'Sales', finance: 'Finance', feedback: 'Feedback', system: 'System',
+}
 const ROLE_OPTIONS: { value: UserRole; label: string }[] = [
   { value: 'admin', label: 'Admin' },
   { value: 'editor', label: 'Editor' },
   { value: 'analyst', label: 'Analyst' },
-  { value: 'crm-manager', label: 'CRM Manager' },
+  { value: 'crm-manager', label: 'CRM manager' },
 ]
 
 function fmt(d: string | null | undefined) {
@@ -71,11 +75,11 @@ export function UserRoleEditor({ user }: { user: UserRow }) {
           </select>
         </td>
         <td className="px-4 py-3">
-          <div style={{ display: 'flex', gap: '10px' }}>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
             {ALL_MODULES.map((m) => (
               <label key={m} style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}>
                 <input type="checkbox" checked={modules.includes(m)} onChange={() => toggleModule(m)} />
-                <span className="text-mono-xs">{m}</span>
+                <span className="text-mono-xs">{MODULE_LABEL[m]}</span>
               </label>
             ))}
           </div>
@@ -103,11 +107,14 @@ export function UserRoleEditor({ user }: { user: UserRow }) {
         {user.isCurrentUser && <span className="badge badge-jade" style={{ marginLeft: '8px' }}>you</span>}
       </td>
       <td className="px-4 py-3">
-        <span className="badge badge-neutral">{role}</span>
+        <span className="badge-neutral" style={{ fontSize: 11 }}>
+          {ROLE_OPTIONS.find((r) => r.value === role)?.label ?? role}
+        </span>
       </td>
       <td className="px-4 py-3">
         <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
-          {modules.map((m) => <span key={m} className="badge badge-neutral">{m}</span>)}
+          {modules.slice(0, 3).map((m) => <span key={m} className="badge-neutral" style={{ fontSize: 11 }}>{MODULE_LABEL[m as ModuleKey] ?? m}</span>)}
+          {modules.length > 3 && <span className="badge-neutral" style={{ fontSize: 11 }}>+{modules.length - 3}</span>}
         </div>
       </td>
       <td className="px-4 py-3 text-mono-xs" style={{ color: 'var(--text-muted)' }}>{fmt(user.createdAt)}</td>

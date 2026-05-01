@@ -1,16 +1,23 @@
 'use client'
 
-/** Shell topbar — wordmark, region badge, user email, logout */
-
 import { useRouter } from 'next/navigation'
 import { createBrowserClient } from '@supabase/ssr'
 import { GlobalSearch } from './global-search'
+import type { UserRole } from '@/lib/auth/roles'
+
+const ROLE_LABELS: Record<UserRole, string> = {
+  admin: 'Admin',
+  editor: 'Editor',
+  analyst: 'Analyst',
+  'crm-manager': 'CRM manager',
+}
 
 interface TopbarProps {
   email: string | undefined
+  role?: UserRole
 }
 
-export function Topbar({ email }: TopbarProps) {
+export function Topbar({ email, role }: TopbarProps) {
   const router = useRouter()
 
   async function handleLogout() {
@@ -23,6 +30,8 @@ export function Topbar({ email }: TopbarProps) {
     router.refresh()
   }
 
+  const truncatedEmail = email && email.length > 24 ? email.slice(0, 24) + '…' : email
+
   return (
     <div className="topbar">
       <div className="flex items-center gap-4">
@@ -32,9 +41,12 @@ export function Topbar({ email }: TopbarProps) {
       <div className="flex items-center gap-3">
         <GlobalSearch />
         <span className="topbar-region">ca-central-1</span>
-        <span className="topbar-email">{email}</span>
+        <span className="topbar-email" title={email}>{truncatedEmail}</span>
+        {role && (
+          <span className="badge-neutral topbar-role">{ROLE_LABELS[role]}</span>
+        )}
         <button onClick={handleLogout} className="topbar-logout">
-          Logout
+          Sign out
         </button>
       </div>
     </div>

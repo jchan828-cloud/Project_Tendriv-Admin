@@ -304,6 +304,7 @@
   .badge-warning  { background-color: var(--amber-bg);        color: var(--amber); }
   .badge-neutral  { background-color: var(--surface-badge);   color: var(--text-muted); border: 1px solid var(--border); }
   .badge-purple   { background-color: var(--purple-bg);       color: var(--purple); }
+  .badge-info     { background-color: var(--blue-bg);         color: var(--blue); }
 
   /* Buttons */
   .btn-base {
@@ -684,6 +685,42 @@
   padding: 0;
 }
 .shell-toggle:hover { background: var(--jade-dim); }
+
+/* Sovereignty pill in sidebar footer */
+.sidebar .sovereignty-pill {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 12px 4px 4px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  cursor: default;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.sidebar .sovereignty-icon {
+  color: var(--jade);
+}
+
+/* Icon-rail state — sidebar at minimum width */
+.sidebar.icon-rail {
+  padding: 12px 0;
+  align-items: center;
+}
+.sidebar.icon-rail .nav-item {
+  justify-content: center;
+  padding: 8px;
+  gap: 0;
+}
+.sidebar.icon-rail .nav-dot {
+  width: 8px;
+  height: 8px;
+}
+.sidebar.icon-rail .sovereignty-pill {
+  margin: 12px 0 4px;
+  padding: 6px;
+  border-radius: 6px;
+}
 
 /* ─────────────────────────────────────────────────────────────
    8. PRINT

@@ -27,7 +27,7 @@ export default async function UsersPage() {
     createdAt: u.created_at,
     lastSignIn: u.last_sign_in_at,
     role: roleMap.get(u.id)?.role ?? 'admin',
-    modules: roleMap.get(u.id)?.modules ?? ['content', 'analytics', 'crm', 'system'],
+    modules: roleMap.get(u.id)?.modules ?? ['content', 'analytics', 'crm', 'sales', 'finance', 'feedback', 'system'],
     isCurrentUser: u.id === user.id,
   }))
 

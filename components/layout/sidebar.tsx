@@ -1,12 +1,9 @@
 'use client'
 
-/** Shell sidebar — sectioned navigation matching tendriv portal mockup */
-
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import type { UserRole } from '@/lib/auth/roles'
-
-export type ModuleKey = 'content' | 'analytics' | 'crm' | 'sales' | 'finance' | 'feedback' | 'system'
+import { Shield } from 'lucide-react'
+import type { ModuleKey, UserRole } from '@/lib/auth/roles'
 
 interface NavItem {
   label: string
@@ -15,44 +12,46 @@ interface NavItem {
 }
 
 interface NavSection {
-  key: ModuleKey
+  key: ModuleKey | 'overview'
   title: string
   items: NavItem[]
 }
 
-const topItems: NavItem[] = [
-  { label: 'Dashboard', href: '/' },
-  { label: 'LinkedIn drafts', href: '/drafts' },
-]
-
 const allSections: NavSection[] = [
+  {
+    key: 'overview',
+    title: 'Overview',
+    items: [
+      { label: 'Dashboard', href: '/' },
+    ],
+  },
   {
     key: 'content',
     title: 'Content',
     items: [
-      { label: 'Blog posts', href: '/posts' },
-      { label: 'New post', href: '/posts/new' },
+      { label: 'Posts', href: '/posts' },
       { label: 'Calendar', href: '/posts/calendar' },
-      { label: 'Media library', href: '/media' },
-      { label: 'Blog pipeline', href: '/blog/pipeline' },
+      { label: 'Drafts', href: '/drafts' },
+      { label: 'Media', href: '/media' },
     ],
   },
   {
     key: 'analytics',
-    title: 'Analytics',
+    title: 'Marketing',
     items: [
-      { label: 'Post performance', href: '/analytics' },
-      { label: 'Funnel', href: '/analytics/funnel' },
-      { label: 'Agency RFX', href: '/analytics/agencies' },
-      { label: 'UTM builder', href: '/analytics/utms' },
+      { label: 'Analytics', href: '/analytics' },
+      { label: 'Funnel', href: '/funnel' },
+      { label: 'UTMs', href: '/utms' },
+      { label: 'Agencies', href: '/agencies' },
     ],
   },
   {
     key: 'crm',
-    title: 'Leads & Outreach',
+    title: 'CRM',
     items: [
       { label: 'Prospects', href: '/crm' },
       { label: 'Accounts', href: '/crm/accounts' },
+      { label: 'Geo', href: '/crm/geo' },
     ],
   },
   {
@@ -67,24 +66,23 @@ const allSections: NavSection[] = [
     title: 'Finance',
     items: [
       { label: 'Overview', href: '/finance' },
-      { label: 'Analytics', href: '/finance/analytics' },
-      { label: 'Subscribers', href: '/finance/customers' },
-      { label: 'Top users', href: '/finance/top-users' },
-      { label: 'Billing accounts', href: '/finance/billing' },
+      { label: 'Vendor Spend', href: '/finance/billing' },
+      { label: 'Customer Revenue', href: '/finance/customers' },
+      { label: 'Top Users', href: '/finance/top-users' },
     ],
   },
   {
     key: 'feedback',
-    title: 'Feedback',
+    title: 'Support',
     items: [
-      { label: 'Inbox', href: '/feedback' },
+      { label: 'Feedback', href: '/feedback' },
     ],
   },
   {
     key: 'system',
     title: 'System',
     items: [
-      { label: 'Audit log', href: '/audit' },
+      { label: 'Audit', href: '/audit' },
     ],
   },
 ]
@@ -94,15 +92,16 @@ const systemHealthItem: NavItem = { label: 'System health', href: '/system-healt
 interface SidebarProps {
   readonly modules?: ModuleKey[]
   readonly role?: UserRole
+  readonly iconRail?: boolean
 }
 
-export function Sidebar({ modules, role }: SidebarProps) {
+export function Sidebar({ modules, role, iconRail }: SidebarProps) {
   const pathname = usePathname()
 
-  const visibleSections = (modules
-    ? allSections.filter((s) => modules.includes(s.key))
-    : allSections
-  ).map((section) =>
+  const visibleSections = allSections.filter((s) => {
+    if (s.key === 'overview') return true
+    return modules ? modules.includes(s.key) : true
+  }).map((section) =>
     section.key === 'system' && role === 'admin'
       ? { ...section, items: [...section.items, systemHealthItem] }
       : section,
@@ -117,53 +116,68 @@ export function Sidebar({ modules, role }: SidebarProps) {
     if (href === pathname) return true
     if (href === '/' && pathname === '/') return true
     if (href === '/posts' && pathname === '/posts') return true
-    if (href === '/posts/new' && pathname.startsWith('/posts/') && pathname !== '/posts' && pathname !== '/posts/calendar') return true
-    if (href !== '/' && href !== '/posts' && href !== '/posts/new' && pathname.startsWith(href + '/')) return true
+    if (
+      href === '/posts' &&
+      pathname.startsWith('/posts/') &&
+      pathname !== '/posts/calendar'
+    )
+      return true
+    if (
+      href !== '/' &&
+      href !== '/posts' &&
+      pathname.startsWith(href + '/')
+    )
+      return true
     return false
   }
 
   return (
-    <aside className="sidebar">
-      {topItems.map((item) => (
-        <Link
-          key={item.href}
-          href={item.href}
-          className={`nav-item${isActive(item.href) ? ' active' : ''}`}
-        >
-          <span className="nav-dot" />
-          {item.label}
-        </Link>
-      ))}
+    <aside className={`sidebar${iconRail ? ' icon-rail' : ''}`}>
       {visibleSections.map((section) => (
         <div key={section.key}>
-          <div className="nav-section">{section.title}</div>
+          {!iconRail && (
+            <div className="nav-section">{section.title}</div>
+          )}
           {section.items.map((item) => (
             <Link
               key={item.href}
               href={item.href}
               className={`nav-item${isActive(item.href) ? ' active' : ''}`}
+              title={iconRail ? item.label : undefined}
             >
               <span className="nav-dot" />
-              {item.label}
-              {item.badge != null && (
+              {!iconRail && item.label}
+              {!iconRail && item.badge != null && (
                 <span className="nav-badge">{item.badge}</span>
               )}
             </Link>
           ))}
         </div>
       ))}
+
       <div style={{ marginTop: 'auto' }}>
-        <div className="nav-section">Settings</div>
+        {!iconRail && (
+          <div className="nav-section">Settings</div>
+        )}
         {settingsItems.map((item) => (
           <Link
             key={item.href}
             href={item.href}
             className={`nav-item${isActive(item.href) ? ' active' : ''}`}
+            title={iconRail ? item.label : undefined}
           >
             <span className="nav-dot" />
-            {item.label}
+            {!iconRail && item.label}
           </Link>
         ))}
+      </div>
+
+      <div className="sovereignty-pill" title={iconRail ? 'Data stored in Canada' : undefined}>
+        {iconRail ? (
+          <Shield size={16} className="sovereignty-icon" aria-label="Data stored in Canada" />
+        ) : (
+          'Data stored in Canada'
+        )}
       </div>
     </aside>
   )
