@@ -19,7 +19,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { createServiceRoleClient } from '@/lib/supabase/server'
 import { callClaudeMessages } from '@/lib/blog/claude-call'
-import { buildBlogPrompt, calculateReadingMinutes, countWords } from '@/lib/blog/claude-prompt'
+import { buildBlogPrompt, countWords } from '@/lib/blog/claude-prompt'
 
 export const maxDuration = 60
 
@@ -103,8 +103,9 @@ async function handler(req: NextRequest) {
   }
 
   // 4. Write the content + flip to 'review'
+  // reading_time_minutes is a GENERATED ALWAYS column derived from word_count;
+  // Postgres rejects direct writes to it.
   const wordCount = countWords(result.text)
-  const readingTime = calculateReadingMinutes(result.text)
 
   const { error: updateError } = await supabase
     .from('blog_posts')
@@ -114,7 +115,6 @@ async function handler(req: NextRequest) {
       generated_at: new Date().toISOString(),
       generation_error: null,
       word_count: wordCount,
-      reading_time_minutes: readingTime,
       generated_by: 'ai-assisted',
       updated_at: new Date().toISOString(),
     })
