@@ -25,9 +25,12 @@ export async function middleware(request: NextRequest) {
   // Public API routes — skip auth redirect.
   // /api/drains/* endpoints authenticate via HMAC signature (Vercel) or
   // a shared bearer token (Supabase), not via session cookies.
+  // /api/blog/* endpoints (enqueue, worker) are hit by Vercel cron with
+  // Authorization: Bearer ${CRON_SECRET} and enforce auth in-handler.
   if (
     request.nextUrl.pathname.startsWith('/api/marketing/') ||
-    request.nextUrl.pathname.startsWith('/api/drains/')
+    request.nextUrl.pathname.startsWith('/api/drains/') ||
+    request.nextUrl.pathname.startsWith('/api/blog/')
   ) {
     return response;
   }
