@@ -10,6 +10,13 @@ const groupStyle = { height: '100%' }
 /** Sidebar is in icon-rail mode when its percentage width is at or below this threshold. */
 const ICON_RAIL_THRESHOLD = 6
 
+/** SSR-safe storage shim: react-resizable-panels' useDefaultLayout reads
+ *  `localStorage` from its default arg, which throws during server render. */
+const layoutStorage: Pick<Storage, 'getItem' | 'setItem'> =
+  typeof window !== 'undefined' && window.localStorage
+    ? window.localStorage
+    : { getItem: () => null, setItem: () => {} }
+
 interface ResizableShellProps {
   readonly modules?: ModuleKey[]
   readonly role?: UserRole
@@ -22,7 +29,7 @@ export function ResizableShell({ modules, role, children }: ResizableShellProps)
   const [iconRail, setIconRail] = useState(false)
   const [mounted, setMounted] = useState(false)
 
-  const { defaultLayout, onLayoutChanged } = useDefaultLayout({ id: 'tendriv-shell-v2' })
+  const { defaultLayout, onLayoutChanged } = useDefaultLayout({ id: 'tendriv-shell-v2', storage: layoutStorage })
 
   useEffect(() => {
     setMounted(true)

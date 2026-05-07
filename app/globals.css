@@ -619,6 +619,14 @@
   flex-direction: column;
 }
 
+/* Mobile main — single-column scroll area below the compact topbar at <md.
+   Padding intentionally matches desktop .shell-main (none); pages own their padding. */
+.shell-main-mobile {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
 /* ResizableShell wrapper — fills height below topbar */
 .shell-resizable {
   flex: 1;
