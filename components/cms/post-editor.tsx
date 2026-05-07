@@ -103,18 +103,21 @@ export function PostEditor({ initialPost }: PostEditorProps) {
 
   const readingTime = Math.max(1, Math.floor(post.word_count / 200))
 
+  // On <md, render front-matter below the editor so the textarea
+  // is the first thing in view; iOS zoom on focus is suppressed by
+  // forcing input font-size to 16px on mobile (text-base md:text-sm).
   return (
-    <div className="flex gap-6">
-      {/* Left — Front Matter */}
-      <div className="w-80 flex-shrink-0 overflow-y-auto rounded-lg border border-[var(--border)] bg-[var(--surface-sidebar)] p-4">
+    <div className="flex flex-col-reverse gap-4 md:flex-row md:gap-6">
+      {/* Front Matter — sidebar on md+, stacked below editor on mobile */}
+      <div className="w-full overflow-y-auto rounded-lg border border-[var(--border)] bg-[var(--surface-sidebar)] p-4 md:w-80 md:flex-shrink-0 [&_.input-base]:text-base md:[&_.input-base]:text-sm">
         <FrontmatterPanel post={post} onChange={handleFieldChange} />
       </div>
 
-      {/* Right — Editor */}
-      <div className="flex-1">
+      {/* Editor */}
+      <div className="min-w-0 flex-1">
         {/* Toolbar */}
-        <div className="mb-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2 sm:gap-3">
             <button
               className={`btn-sm ${!showPreview ? 'btn-primary' : 'btn-secondary'}`}
               onClick={() => setShowPreview(false)}
@@ -128,7 +131,7 @@ export function PostEditor({ initialPost }: PostEditorProps) {
               Preview
             </button>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-4">
             <span className="text-mono-xs text-[var(--text-muted)]">
               {post.word_count} words · {readingTime} min read
             </span>
@@ -146,7 +149,7 @@ export function PostEditor({ initialPost }: PostEditorProps) {
           <MarkdownPreview content={post.content ?? ''} />
         ) : (
           <textarea
-            className="input-base min-h-[500px] font-mono text-sm leading-relaxed"
+            className="input-base min-h-[60vh] font-mono text-base leading-relaxed md:min-h-[500px] md:text-sm"
             value={post.content ?? ''}
             onChange={(e) => handleContentChange(e.target.value)}
             placeholder="Start writing in Markdown…"
