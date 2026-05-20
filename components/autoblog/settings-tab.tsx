@@ -11,9 +11,9 @@ import type { AutoblogSettings } from '@/lib/types/autoblog'
 
 function utcHHMMtoMT(hhmm: string): string {
   if (!hhmm) return ''
-  const [hStr, mStr] = hhmm.split(':')
-  const h = parseInt(hStr, 10)
-  const m = parseInt(mStr ?? '0', 10)
+  const parts = hhmm.split(':')
+  const h = parseInt(parts[0] ?? '0', 10)
+  const m = parseInt(parts[1] ?? '0', 10)
   // Build a Date in UTC with today's date + that hour/minute
   const now = new Date()
   const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), h, m, 0))
@@ -27,9 +27,9 @@ function utcHHMMtoMT(hhmm: string): string {
 
 function mtHHMMtoUTC(hhmm: string): string {
   if (!hhmm) return ''
-  const [hStr, mStr] = hhmm.split(':')
-  const h = parseInt(hStr, 10)
-  const m = parseInt(mStr ?? '0', 10)
+  const parts = hhmm.split(':')
+  const h = parseInt(parts[0] ?? '0', 10)
+  const m = parseInt(parts[1] ?? '0', 10)
   if (isNaN(h) || isNaN(m)) return ''
 
   // We need to find what UTC hour corresponds to this MT local time.
@@ -57,7 +57,7 @@ function mtHHMMtoUTC(hhmm: string): string {
     hour12: false,
     timeZone: 'America/Edmonton',
   }).format(probe)
-  const probeHour = parseInt(mtProbeStr.split(':')[0], 10)
+  const probeHour = parseInt(mtProbeStr.split(':')[0] ?? '0', 10)
   const offsetHours = 12 - probeHour // positive = behind UTC
 
   let utcH = h + offsetHours
