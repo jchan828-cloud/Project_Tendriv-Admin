@@ -133,14 +133,16 @@ Publishes a draft:
 
 ### `POST /api/autoblog/review`
 
-Proxies human review decisions to rfp-blog (for the WDK hook):
+Proxies human review decisions to rfp-blog's WDK hook resume endpoint. This is used when the workflow is paused at the human review gate (quality gate step emits an `awaiting_review` event with a hook token). The admin UI's live stream panel or review queue calls this to resume the workflow.
+
 1. `POST ${AUTOBLOG_ENGINE_URL}/api/autoblog-review` with `{ token, decision, edits }`.
-2. Returns `{ ok: true }`.
+2. `decision` must be `"approve"`, `"revise"`, or `"reject"`.
+3. Returns `{ ok: true }`.
 
 ### `GET /api/autoblog/health`
 
 Health check:
-1. `GET ${AUTOBLOG_ENGINE_URL}/api/autoblog` (or a dedicated health endpoint).
+1. `GET ${AUTOBLOG_ENGINE_URL}/api/autoblog-run/health` — a new lightweight GET endpoint on rfp-blog that returns `{ ok: true }` (see rfp-blog changes below).
 2. Returns `{ ok: true, latency: <ms> }` or `{ ok: false, error: <message> }`.
 
 ### `GET /api/autoblog/settings`
@@ -176,18 +178,66 @@ CREATE TABLE autoblog_settings (
 
 Single-row table with CHECK constraint on id to enforce exactly one config row.
 
-### Existing table changes: `autoblog_runs`
+### Existing table: `autoblog_runs` (current schema)
 
-Add columns (if not already present):
-- `headline TEXT` — the generated article headline
+| Column | Type | Notes |
+|--------|------|-------|
+| id | UUID PK | auto-generated |
+| run_id | TEXT NOT NULL | WDK workflow run ID |
+| tender_id | TEXT NOT NULL | scout_notices.id |
+| status | TEXT NOT NULL | `'running'` default. Values: running, completed, failed |
+| target_persona | TEXT NOT NULL | e.g. 'bid-manager' |
+| closing_date | DATE NOT NULL | tender closing date |
+| published_slug | TEXT NULL | set on publish |
+| quality_score | NUMERIC NULL | E-E-A-T score |
+| total_tokens | INTEGER NULL | token usage |
+| estimated_cost | NUMERIC NULL | cost estimate |
+| created_at | TIMESTAMPTZ | default now() |
+| completed_at | TIMESTAMPTZ NULL | when workflow finished |
+
+**New columns to add:**
+
+- `headline TEXT` — the generated article headline (populated by quality gate step)
 - `draft_markdown TEXT` — the full draft markdown content
-- `seo_metadata JSONB` — primary keyword, slug, schema type, etc.
-- `quality_score INTEGER` — E-E-A-T compliance score (0-100)
+- `seo_metadata JSONB` — `{ primaryKeyword, secondaryKeywords, targetSlug, schemaType, contentSilo, metaTitle, metaDescription }`
 - `word_count INTEGER` — generated article word count
 - `content_type TEXT` — tender-analysis, how-to, glossary, sector-report
 - `published_at TIMESTAMPTZ` — when the draft was published (null until publish)
 
-These columns are populated by the workflow's quality gate step. The `status` column already tracks: `running`, `completed`, `failed`. We add `published` as a new status value.
+The `status` column gains a new value: `published` (in addition to running, completed, failed).
+
+### Existing table: `blog_posts` (publish target)
+
+The publish action inserts into this table. Required columns for autoblog publishing:
+
+| Column | Value Source |
+|--------|-------------|
+| title | `autoblog_runs.headline` |
+| slug | `autoblog_runs.seo_metadata->>'targetSlug'` |
+| content | `autoblog_runs.draft_markdown` |
+| excerpt | First 160 chars of draft |
+| meta_description | `autoblog_runs.seo_metadata->>'metaDescription'` |
+| target_keyword | `autoblog_runs.seo_metadata->>'primaryKeyword'` |
+| secondary_keywords | `autoblog_runs.seo_metadata->>'secondaryKeywords'` (array) |
+| content_type | `autoblog_runs.content_type` |
+| status | `'published'` |
+| generated_by | `'autoblog'` |
+| word_count | `autoblog_runs.word_count` |
+| jsonld_override | Built from `autoblog_runs.seo_metadata->>'schemaType'` |
+| published_at | `now()` |
+| generated_at | `autoblog_runs.completed_at` |
+
+Other columns (`author_id`, `reviewer_id`, `is_gated`, etc.) are nullable and left as defaults.
+
+### Persona value mapping
+
+The `target_persona` column and Settings UI use kebab-case values internally. The UI displays human-readable labels:
+
+| Stored value | Display label |
+|-------------|---------------|
+| `bid-manager` | Bid Manager — experienced procurement professional preparing proposals |
+| `business-owner` | Business Owner — SMB owner exploring government contracts for the first time |
+| `procurement-officer` | Procurement Officer — government buyer researching supplier landscape |
 
 ### Cron changes on rfp-blog
 
@@ -279,6 +329,37 @@ lib/types/blog-settings.ts
 - The markdown preview in the Review tab can use a lightweight markdown renderer. Check if the admin already has one; if not, add `react-markdown` (~30KB).
 - The SSE stream panel uses native `EventSource` API in the browser, no library needed.
 - Tab state uses `useSearchParams()` from `next/navigation` for bookmarkable tabs.
+
+---
+
+## rfp-blog Changes (Separate Deployment)
+
+These changes are deployed to rfp-blog.vercel.app independently. They should be done first since the admin depends on them.
+
+### New: Health endpoint
+
+Add `app/api/autoblog-health/route.ts`:
+```
+GET /api/autoblog-health → { ok: true, timestamp: <ISO string> }
+```
+
+### New: API key validation
+
+All existing endpoints (autoblog, autoblog-readable, autoblog-run, autoblog-review) gain middleware or per-route checks that validate the `x-autoblog-key` header matches `AUTOBLOG_API_KEY` env var. Returns 401 if missing/invalid. The cron route uses `CRON_SECRET` as before.
+
+### Modified: Cron route reads `autoblog_settings`
+
+The existing `api/autoblog/cron/route.ts` is updated to:
+1. Read `autoblog_settings` from Supabase.
+2. If `enabled = false`, return `{ skipped: true, reason: 'disabled' }`.
+3. Check `frequency` against `autoblog_runs.created_at` of the last run.
+4. If not due, return `{ skipped: true, reason: 'not_due' }`.
+5. Loop `posts_per_run` times, calling `start(autoblogWorkflow, [])` each time.
+6. Pass `target_persona` from settings to the workflow.
+
+### Modified: Workflow writes new columns
+
+The autoblog workflow's quality gate step needs to write `headline`, `draft_markdown`, `seo_metadata`, `word_count`, and `content_type` to `autoblog_runs` when the run completes.
 
 ---
 
