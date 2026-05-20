@@ -31,9 +31,8 @@ const allSections: NavSection[] = [
     items: [
       { label: 'Posts', href: '/posts' },
       { label: 'Calendar', href: '/posts/calendar' },
-      { label: 'Drafts', href: '/drafts' },
       { label: 'Media', href: '/media' },
-      { label: 'Blog pipeline', href: '/blog/pipeline' },
+      { label: 'Autoblog', href: '/autoblog' },
     ],
   },
   {
