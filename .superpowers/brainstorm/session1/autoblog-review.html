@@ -1,0 +1,98 @@
+<h2>Autoblog — Review Queue Tab</h2>
+<p class="subtitle">Shows completed drafts waiting for human review. Click a draft to expand the preview panel.</p>
+
+<div class="mockup" style="background:#fafbfc; border:1px solid #c4cbd4; border-radius:8px; overflow:hidden; font-family:system-ui,-apple-system,sans-serif; max-width:960px; margin:1.5rem auto;">
+
+  <!-- Tab bar -->
+  <div style="display:flex; gap:0; border-bottom:1px solid #edf0f3; background:#fff;">
+    <div style="padding:12px 24px; font-size:14px; color:#4A5668; cursor:pointer;">Dashboard</div>
+    <div style="padding:12px 24px; font-size:14px; font-weight:600; color:#00C896; border-bottom:2px solid #00C896;">Review Queue</div>
+    <div style="padding:12px 24px; font-size:14px; color:#4A5668; cursor:pointer;">Settings</div>
+    <div style="margin-left:auto; padding:8px 24px; display:flex; align-items:center; gap:8px;">
+      <span style="font-size:12px; color:#8A97A8;">2 pending review</span>
+    </div>
+  </div>
+
+  <!-- Split layout: list on left, preview on right -->
+  <div style="display:flex; min-height:480px;">
+
+    <!-- Left: draft list -->
+    <div style="width:320px; border-right:1px solid #edf0f3; background:#fff;">
+      <!-- Draft item — selected -->
+      <div style="padding:14px 16px; border-bottom:1px solid #edf0f3; background:rgba(0,200,150,0.06); border-left:3px solid #00C896; cursor:pointer;">
+        <div style="font-size:13px; font-weight:600; color:#0A0C10; margin-bottom:4px; line-height:1.3;">How to Win Road Maintenance Equipment Tenders in Ontario</div>
+        <div style="font-size:11px; color:#8A97A8; display:flex; gap:12px; margin-top:6px;">
+          <span>tender-analysis</span>
+          <span>·</span>
+          <span>1,840 words</span>
+          <span>·</span>
+          <span>Score: 87/100</span>
+        </div>
+        <div style="font-size:11px; color:#4A5668; margin-top:4px;">Generated yesterday at 11:04 AM</div>
+      </div>
+
+      <!-- Draft item — unselected -->
+      <div style="padding:14px 16px; border-bottom:1px solid #edf0f3; cursor:pointer;">
+        <div style="font-size:13px; font-weight:600; color:#0A0C10; margin-bottom:4px; line-height:1.3;">Security Consulting RFPs: What PSPC Evaluators Look For</div>
+        <div style="font-size:11px; color:#8A97A8; display:flex; gap:12px; margin-top:6px;">
+          <span>how-to</span>
+          <span>·</span>
+          <span>2,100 words</span>
+          <span>·</span>
+          <span>Score: 91/100</span>
+        </div>
+        <div style="font-size:11px; color:#4A5668; margin-top:4px;">Generated May 18 at 11:10 AM</div>
+      </div>
+
+      <!-- Empty state hint -->
+      <div style="padding:20px 16px; color:#8A97A8; font-size:12px; text-align:center;">
+        All other runs are published or failed
+      </div>
+    </div>
+
+    <!-- Right: preview panel -->
+    <div style="flex:1; padding:20px 24px; overflow-y:auto; background:#fff;">
+      <!-- Action bar -->
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:20px; padding-bottom:14px; border-bottom:1px solid #edf0f3;">
+        <span style="background:#00C896; color:white; padding:6px 18px; border-radius:6px; font-size:13px; font-weight:500; cursor:pointer;">Publish</span>
+        <span style="background:#fff; color:#4A5668; border:1px solid #c4cbd4; padding:6px 18px; border-radius:6px; font-size:13px; cursor:pointer;">Edit</span>
+        <span style="background:#fff; color:#FF4D3D; border:1px solid rgba(255,77,61,0.2); padding:6px 18px; border-radius:6px; font-size:13px; cursor:pointer;">Discard</span>
+        <div style="margin-left:auto; display:flex; gap:16px; font-size:12px; color:#8A97A8;">
+          <span>Slug: /blog/road-maintenance-equipment-tenders-ontario</span>
+        </div>
+      </div>
+
+      <!-- Meta info badges -->
+      <div style="display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap;">
+        <span style="background:#edf0f3; padding:3px 10px; border-radius:4px; font-size:11px; color:#4A5668;">Primary: road maintenance tender ontario</span>
+        <span style="background:#edf0f3; padding:3px 10px; border-radius:4px; font-size:11px; color:#4A5668;">Schema: Article</span>
+        <span style="background:#edf0f3; padding:3px 10px; border-radius:4px; font-size:11px; color:#4A5668;">E-E-A-T: 87/100</span>
+        <span style="background:rgba(0,200,150,0.08); padding:3px 10px; border-radius:4px; font-size:11px; color:#009E77;">Closes: May 28 (8 days)</span>
+      </div>
+
+      <!-- Markdown preview (simulated) -->
+      <div style="font-size:14px; line-height:1.7; color:#0A0C10;">
+        <h1 style="font-size:22px; font-weight:700; margin-bottom:8px; color:#0A0C10;">How to Win Road Maintenance Equipment Tenders in Ontario</h1>
+        <p style="color:#4A5668; font-size:13px; margin-bottom:16px; font-style:italic;">A practical guide for Canadian suppliers navigating Ontario's procurement process for road maintenance equipment and fleet renewal contracts.</p>
+
+        <h2 style="font-size:16px; font-weight:600; margin:20px 0 8px; color:#0A0C10;">Understanding Ontario's Procurement Framework</h2>
+        <p style="color:#2A3344; font-size:13.5px; line-height:1.7;">
+          Ontario's road maintenance equipment tenders follow a structured procurement process through the Ontario Tender Portal. Recent notices indicate a shift toward integrated fleet management solutions that combine traditional maintenance equipment with telematics and predictive maintenance capabilities...
+        </p>
+
+        <h2 style="font-size:16px; font-weight:600; margin:20px 0 8px; color:#0A0C10;">Key Evaluation Criteria</h2>
+        <p style="color:#2A3344; font-size:13.5px; line-height:1.7;">
+          Based on our analysis of recent RFPs, evaluators consistently weight these factors: <strong>technical compliance</strong> (30-40%), <strong>past performance</strong> (20-25%), <strong>pricing</strong> (25-30%), and <strong>delivery timeline</strong> (10-15%)...
+        </p>
+
+        <div style="color:#8A97A8; font-size:12px; margin-top:24px; padding-top:12px; border-top:1px dashed #edf0f3;">
+          ↓ Scroll to see full article (1,840 words) · 6 sections · 3 citations
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p style="text-align:center; color:#666; font-size:13px; margin-top:12px;">
+  Split-panel layout: draft list on left, markdown preview + actions on right. Similar to admin's existing draft-desk-client pattern.
+</p>

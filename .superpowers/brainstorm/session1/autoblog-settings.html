@@ -1,0 +1,97 @@
+<h2>Autoblog — Settings Tab</h2>
+<p class="subtitle">Schedule configuration, target persona, and workflow engine connection.</p>
+
+<div class="mockup" style="background:#fafbfc; border:1px solid #c4cbd4; border-radius:8px; overflow:hidden; font-family:system-ui,-apple-system,sans-serif; max-width:900px; margin:1.5rem auto;">
+
+  <!-- Tab bar -->
+  <div style="display:flex; gap:0; border-bottom:1px solid #edf0f3; background:#fff;">
+    <div style="padding:12px 24px; font-size:14px; color:#4A5668; cursor:pointer;">Dashboard</div>
+    <div style="padding:12px 24px; font-size:14px; color:#4A5668; cursor:pointer;">Review Queue</div>
+    <div style="padding:12px 24px; font-size:14px; font-weight:600; color:#00C896; border-bottom:2px solid #00C896;">Settings</div>
+  </div>
+
+  <div style="padding:24px; max-width:600px;">
+
+    <!-- Schedule section -->
+    <div style="margin-bottom:32px;">
+      <h3 style="font-size:15px; font-weight:600; color:#0A0C10; margin-bottom:16px;">Schedule</h3>
+
+      <!-- Enable toggle -->
+      <div style="display:flex; align-items:center; justify-content:space-between; padding:12px 0; border-bottom:1px solid #edf0f3;">
+        <div>
+          <div style="font-size:13px; font-weight:500; color:#0A0C10;">Auto-generate posts</div>
+          <div style="font-size:12px; color:#8A97A8; margin-top:2px;">Automatically run the pipeline on a schedule</div>
+        </div>
+        <!-- Toggle switch (on) -->
+        <div style="width:44px; height:24px; background:#00C896; border-radius:12px; position:relative; cursor:pointer;">
+          <div style="width:20px; height:20px; background:white; border-radius:50%; position:absolute; top:2px; right:2px; box-shadow:0 1px 3px rgba(0,0,0,0.15);"></div>
+        </div>
+      </div>
+
+      <!-- Frequency -->
+      <div style="padding:14px 0; border-bottom:1px solid #edf0f3;">
+        <div style="font-size:13px; font-weight:500; color:#0A0C10; margin-bottom:8px;">Frequency</div>
+        <div style="display:flex; gap:8px;">
+          <span style="padding:6px 16px; border-radius:6px; font-size:13px; background:#00C896; color:white; cursor:pointer;">Daily</span>
+          <span style="padding:6px 16px; border-radius:6px; font-size:13px; background:#edf0f3; color:#4A5668; cursor:pointer;">Every 2 days</span>
+          <span style="padding:6px 16px; border-radius:6px; font-size:13px; background:#edf0f3; color:#4A5668; cursor:pointer;">Weekly</span>
+        </div>
+      </div>
+
+      <!-- Time -->
+      <div style="padding:14px 0; border-bottom:1px solid #edf0f3;">
+        <div style="font-size:13px; font-weight:500; color:#0A0C10; margin-bottom:8px;">Run time (UTC)</div>
+        <div style="display:inline-flex; align-items:center; gap:8px;">
+          <span style="padding:6px 12px; background:#fff; border:1px solid #c4cbd4; border-radius:6px; font-size:13px; color:#0A0C10; min-width:80px; text-align:center;">11:00</span>
+          <span style="font-size:12px; color:#8A97A8;">Next run: Tomorrow at 11:00 AM UTC</span>
+        </div>
+      </div>
+
+      <!-- Posts per run -->
+      <div style="padding:14px 0; border-bottom:1px solid #edf0f3;">
+        <div style="font-size:13px; font-weight:500; color:#0A0C10; margin-bottom:8px;">Posts per run</div>
+        <div style="display:flex; gap:8px;">
+          <span style="padding:6px 16px; border-radius:6px; font-size:13px; background:#00C896; color:white; cursor:pointer;">1</span>
+          <span style="padding:6px 16px; border-radius:6px; font-size:13px; background:#edf0f3; color:#4A5668; cursor:pointer;">2</span>
+          <span style="padding:6px 16px; border-radius:6px; font-size:13px; background:#edf0f3; color:#4A5668; cursor:pointer;">3</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Persona section -->
+    <div style="margin-bottom:32px;">
+      <h3 style="font-size:15px; font-weight:600; color:#0A0C10; margin-bottom:16px;">Target Persona</h3>
+
+      <div style="padding:14px 0; border-bottom:1px solid #edf0f3;">
+        <div style="font-size:13px; font-weight:500; color:#0A0C10; margin-bottom:8px;">Who are we writing for?</div>
+        <select style="padding:8px 12px; border:1px solid #c4cbd4; border-radius:6px; font-size:13px; color:#0A0C10; background:#fff; width:100%; max-width:400px;">
+          <option selected>Bid Manager — experienced procurement professional preparing proposals</option>
+          <option>Business Owner — SMB owner exploring government contracts for the first time</option>
+          <option>Procurement Officer — government buyer researching supplier landscape</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Connection status -->
+    <div style="margin-bottom:24px;">
+      <h3 style="font-size:15px; font-weight:600; color:#0A0C10; margin-bottom:16px;">Workflow Engine</h3>
+
+      <div style="padding:14px 16px; background:rgba(16,185,129,0.06); border:1px solid rgba(16,185,129,0.15); border-radius:8px; display:flex; align-items:center; gap:10px;">
+        <div style="width:8px; height:8px; border-radius:50%; background:#10B981;"></div>
+        <div style="flex:1;">
+          <div style="font-size:13px; font-weight:500; color:#0A0C10;">Connected to rfp-blog.vercel.app</div>
+          <div style="font-size:12px; color:#8A97A8; margin-top:2px;">Last health check: 2 seconds ago · API responding normally</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Save button -->
+    <div style="padding-top:8px;">
+      <span style="background:#00C896; color:white; padding:8px 24px; border-radius:6px; font-size:14px; font-weight:500; cursor:pointer;">Save settings</span>
+    </div>
+  </div>
+</div>
+
+<p style="text-align:center; color:#666; font-size:13px; margin-top:12px;">
+  Settings stored in Supabase autoblog_settings table. The cron on rfp-blog reads these before each scheduled run.
+</p>

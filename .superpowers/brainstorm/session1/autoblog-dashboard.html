@@ -1,0 +1,82 @@
+<h2>Autoblog — Dashboard Tab (Default View)</h2>
+<p class="subtitle">This is the main view when you click "Autoblog" in the sidebar. Three tabs at top, dashboard is default.</p>
+
+<div class="mockup" style="background:#fafbfc; border:1px solid #c4cbd4; border-radius:8px; overflow:hidden; font-family:system-ui,-apple-system,sans-serif; max-width:900px; margin:1.5rem auto;">
+
+  <!-- Tab bar -->
+  <div style="display:flex; gap:0; border-bottom:1px solid #edf0f3; background:#fff;">
+    <div style="padding:12px 24px; font-size:14px; font-weight:600; color:#00C896; border-bottom:2px solid #00C896;">Dashboard</div>
+    <div style="padding:12px 24px; font-size:14px; color:#4A5668; cursor:pointer;">Review Queue</div>
+    <div style="padding:12px 24px; font-size:14px; color:#4A5668; cursor:pointer;">Settings</div>
+    <div style="margin-left:auto; padding:12px 24px;">
+      <span style="background:#00C896; color:white; padding:6px 16px; border-radius:6px; font-size:13px; font-weight:500; cursor:pointer;">▶ Run Now</span>
+    </div>
+  </div>
+
+  <!-- Active run banner (shown when a run is in progress) -->
+  <div style="margin:16px; padding:14px 18px; background:rgba(0,200,150,0.08); border:1px solid rgba(0,200,150,0.2); border-radius:8px; display:flex; align-items:center; gap:12px;">
+    <div style="width:10px; height:10px; border-radius:50%; background:#00C896; animation:pulse 1.5s infinite;"></div>
+    <div style="flex:1;">
+      <div style="font-size:13px; font-weight:600; color:#0A0C10;">Run in progress — Stage 4 of 6: Drafting Debate</div>
+      <div style="font-size:12px; color:#4A5668; margin-top:2px;">Started 3 min ago · Tender: "IT Infrastructure Services — City of Toronto"</div>
+    </div>
+    <span style="font-size:12px; color:#00C896; cursor:pointer; text-decoration:underline;">View live</span>
+  </div>
+
+  <!-- Run history table -->
+  <div style="margin:0 16px 16px;">
+    <div style="font-size:13px; font-weight:600; color:#0A0C10; margin-bottom:10px;">Recent Runs</div>
+    <table style="width:100%; border-collapse:collapse; font-size:13px;">
+      <thead>
+        <tr style="border-bottom:1px solid #edf0f3; text-align:left;">
+          <th style="padding:8px 12px; color:#8A97A8; font-weight:500;">Tender</th>
+          <th style="padding:8px 12px; color:#8A97A8; font-weight:500;">Status</th>
+          <th style="padding:8px 12px; color:#8A97A8; font-weight:500;">Started</th>
+          <th style="padding:8px 12px; color:#8A97A8; font-weight:500;">Duration</th>
+          <th style="padding:8px 12px; color:#8A97A8; font-weight:500;">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="border-bottom:1px solid #edf0f3;">
+          <td style="padding:10px 12px; color:#0A0C10;">IT Infrastructure Services — City of Toronto</td>
+          <td style="padding:10px 12px;"><span style="background:rgba(245,158,11,0.08); color:#F59E0B; padding:2px 8px; border-radius:4px; font-size:12px;">Running</span></td>
+          <td style="padding:10px 12px; color:#4A5668;">2 min ago</td>
+          <td style="padding:10px 12px; color:#4A5668;">—</td>
+          <td style="padding:10px 12px;"><span style="color:#00C896; cursor:pointer;">Stream</span></td>
+        </tr>
+        <tr style="border-bottom:1px solid #edf0f3;">
+          <td style="padding:10px 12px; color:#0A0C10;">Road Maintenance Equipment — Province of Ontario</td>
+          <td style="padding:10px 12px;"><span style="background:rgba(16,185,129,0.08); color:#10B981; padding:2px 8px; border-radius:4px; font-size:12px;">Completed</span></td>
+          <td style="padding:10px 12px; color:#4A5668;">Yesterday 11:00 AM</td>
+          <td style="padding:10px 12px; color:#4A5668;">4m 32s</td>
+          <td style="padding:10px 12px;"><span style="color:#00C896; cursor:pointer;">Review →</span></td>
+        </tr>
+        <tr style="border-bottom:1px solid #edf0f3;">
+          <td style="padding:10px 12px; color:#0A0C10;">Security Consulting — PSPC</td>
+          <td style="padding:10px 12px;"><span style="background:rgba(16,185,129,0.08); color:#10B981; padding:2px 8px; border-radius:4px; font-size:12px;">Published</span></td>
+          <td style="padding:10px 12px; color:#4A5668;">May 18, 11:00 AM</td>
+          <td style="padding:10px 12px; color:#4A5668;">5m 10s</td>
+          <td style="padding:10px 12px;"><span style="color:#4A5668;">View post</span></td>
+        </tr>
+        <tr>
+          <td style="padding:10px 12px; color:#0A0C10;">Janitorial Services — DND</td>
+          <td style="padding:10px 12px;"><span style="background:rgba(255,77,61,0.08); color:#FF4D3D; padding:2px 8px; border-radius:4px; font-size:12px;">Failed</span></td>
+          <td style="padding:10px 12px; color:#4A5668;">May 17, 11:00 AM</td>
+          <td style="padding:10px 12px; color:#4A5668;">0m 12s</td>
+          <td style="padding:10px 12px;"><span style="color:#4A5668;">View logs</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<style>
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+</style>
+
+<p style="text-align:center; color:#666; font-size:13px; margin-top:12px;">
+  Uses Tendriv design tokens: Jade #00C896, ink palette, status colors. Fits inside the existing resizable-shell layout.
+</p>
