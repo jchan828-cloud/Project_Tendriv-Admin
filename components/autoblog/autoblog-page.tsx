@@ -96,7 +96,12 @@ export function AutoblogPage({ initialRuns, initialSettings }: AutoblogPageProps
       </div>
 
       {/* Active tab content */}
-      {activeTab === 'dashboard' && <DashboardTab initialRuns={initialRuns} />}
+      {activeTab === 'dashboard' && (
+        <DashboardTab
+          initialRuns={initialRuns}
+          onSwitchToReview={() => setActiveTab('review')}
+        />
+      )}
       {activeTab === 'review' && <ReviewTab initialRuns={initialRuns} />}
       {activeTab === 'settings' && <SettingsTab initialSettings={initialSettings} />}
     </div>

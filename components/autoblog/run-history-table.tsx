@@ -1,5 +1,6 @@
 'use client'
 
+import { ExternalLink } from 'lucide-react'
 import { StatusBadge } from './status-badge'
 import type { AutoblogRun } from '@/lib/types/autoblog'
 
@@ -106,7 +107,14 @@ export function RunHistoryTable({ runs, onSelectRun }: RunHistoryTableProps) {
                 </span>
               </td>
               <td style={{ padding: '12px 16px' }}>
-                <StatusBadge status={run.status} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <StatusBadge status={run.status} />
+                  {run.published_slug && (
+                    <span title={`Published: ${run.published_slug}`} style={{ display: 'inline-flex', flexShrink: 0 }}>
+                      <ExternalLink size={12} style={{ color: 'var(--text-muted)' }} />
+                    </span>
+                  )}
+                </div>
               </td>
               <td
                 style={{
