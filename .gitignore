@@ -37,5 +37,6 @@ next-env.d.ts
 .playwright-mcp/
 supabase/.temp/
 
-# local design docs
-docs/
+# local design docs (agent scratchpad) — but track the diagram set
+docs/*
+!docs/diagrams/
