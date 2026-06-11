@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { createServiceRoleClient } from '@/lib/supabase/server';
+import { createEngineClient } from '@/lib/supabase/engine';
 import { requireContentAccess } from '@/lib/autoblog/auth';
+import { resolveContentType } from '@/lib/autoblog/content-type';
 
 function stripMarkdown(md: string): string {
   return md
@@ -22,11 +24,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Missing runId or markdown' }, { status: 400 });
   }
 
-  const supabase = await createServiceRoleClient();
+  // Two databases: runs live in the engine DB (tendriv-blog-content);
+  // blog_posts lives in the marketing DB that tendriv.ca renders from.
+  const engine = createEngineClient();
+  const marketing = await createServiceRoleClient();
 
-  const { data: run, error: runError } = await supabase
+  const { data: run, error: runError } = await engine
     .from('autoblog_runs')
-    .select('headline, seo_metadata, content_type, completed_at, target_persona, closing_date, tender_id')
+    .select('headline, seo_metadata, completed_at')
     .eq('run_id', runId)
     .single();
 
@@ -67,21 +72,24 @@ export async function POST(request: Request) {
     jsonldOverride = { '@type': 'HowTo', name: run.headline, step: [] };
   }
 
-  const { error: insertError } = await supabase.from('blog_posts').insert({
+  // Same contract as the engine's insertBlogPost: review-state row, suffixed
+  // slug (never collides with a published slug), no published_at — promotion
+  // to 'published' is the approval surface's job.
+  const slug = `${seo.targetSlug}-${Date.now()}`;
+  const { error: insertError } = await marketing.from('blog_posts').insert({
     title: run.headline,
-    slug: seo.targetSlug,
+    slug,
     content: markdown,
     excerpt: plainExcerpt,
     meta_description: seo.metaDescription,
     target_keyword: seo.primaryKeyword,
     secondary_keywords: seo.secondaryKeywords,
-    content_type: run.content_type,
-    status: 'published',
-    generated_by: 'autoblog',
+    content_type: resolveContentType('rfp', seo.schemaType),
+    status: 'review',
+    generated_by: 'ai-assisted',
     word_count: wordCount,
     reading_time_minutes: Math.ceil(wordCount / 200),
     jsonld_override: jsonldOverride,
-    published_at: now,
     generated_at: run.completed_at,
     author_id: (auth as { userId: string }).userId,
   });
@@ -90,10 +98,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: insertError.message }, { status: 500 });
   }
 
-  await supabase
+  await engine
     .from('autoblog_runs')
-    .update({ status: 'published', published_slug: seo.targetSlug, published_at: now })
+    .update({ status: 'review', published_slug: slug })
     .eq('run_id', runId);
 
-  return NextResponse.json({ ok: true, slug: seo.targetSlug });
+  return NextResponse.json({ ok: true, slug, status: 'review' });
 }
