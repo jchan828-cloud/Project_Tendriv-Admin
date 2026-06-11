@@ -3,29 +3,41 @@
 import { useState } from 'react'
 import { DashboardTab } from './dashboard-tab'
 import { ReviewTab } from './review-tab'
+import { ApprovalsTab } from './approvals-tab'
 import { SettingsTab } from './settings-tab'
-import type { AutoblogRun, AutoblogSettings } from '@/lib/types/autoblog'
+import type { AutoblogRun, AutoblogSettings, ReviewQueueItem } from '@/lib/types/autoblog'
 
-type Tab = 'dashboard' | 'review' | 'settings'
+type Tab = 'dashboard' | 'review' | 'approvals' | 'settings'
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'dashboard', label: 'Dashboard' },
   { id: 'review', label: 'Review Queue' },
+  { id: 'approvals', label: 'Approvals' },
   { id: 'settings', label: 'Settings' },
 ]
 
 interface AutoblogPageProps {
   initialRuns: AutoblogRun[]
   initialSettings: AutoblogSettings | null
+  initialQueue?: ReviewQueueItem[]
+  queueWarning?: string | null
 }
 
-export function AutoblogPage({ initialRuns, initialSettings }: AutoblogPageProps) {
+export function AutoblogPage({
+  initialRuns,
+  initialSettings,
+  initialQueue = [],
+  queueWarning = null,
+}: AutoblogPageProps) {
   const [activeTab, setActiveTab] = useState<Tab>('dashboard')
 
   // Badge count for review queue
   const reviewCount = initialRuns.filter(
     (r) => r.status === 'completed' && r.published_slug == null
   ).length
+
+  // Badge count for approvals: marketing posts sitting in 'review'
+  const approvalsCount = initialQueue.length
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
@@ -75,7 +87,8 @@ export function AutoblogPage({ initialRuns, initialSettings }: AutoblogPageProps
               }}
             >
               {tab.label}
-              {tab.id === 'review' && reviewCount > 0 && (
+              {((tab.id === 'review' && reviewCount > 0) ||
+                (tab.id === 'approvals' && approvalsCount > 0)) && (
                 <span
                   style={{
                     fontSize: 10,
@@ -87,7 +100,7 @@ export function AutoblogPage({ initialRuns, initialSettings }: AutoblogPageProps
                     fontWeight: 600,
                   }}
                 >
-                  {reviewCount}
+                  {tab.id === 'review' ? reviewCount : approvalsCount}
                 </span>
               )}
             </button>
@@ -103,6 +116,9 @@ export function AutoblogPage({ initialRuns, initialSettings }: AutoblogPageProps
         />
       )}
       {activeTab === 'review' && <ReviewTab initialRuns={initialRuns} />}
+      {activeTab === 'approvals' && (
+        <ApprovalsTab initialItems={initialQueue} queueWarning={queueWarning} />
+      )}
       {activeTab === 'settings' && <SettingsTab initialSettings={initialSettings} />}
     </div>
   )
