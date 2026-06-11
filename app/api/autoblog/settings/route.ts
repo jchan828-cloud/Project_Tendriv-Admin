@@ -1,12 +1,14 @@
 import { NextResponse } from 'next/server';
-import { createServiceRoleClient } from '@/lib/supabase/server';
+import { createEngineClient } from '@/lib/supabase/engine';
 import { requireContentAccess } from '@/lib/autoblog/auth';
 
 export async function GET() {
   const auth = await requireContentAccess();
   if (auth instanceof NextResponse) return auth;
 
-  const supabase = await createServiceRoleClient();
+  // autoblog_settings lives in the engine DB — the workflow reads its schedule
+  // from there, so the admin UI must edit the same row.
+  const supabase = createEngineClient();
   const { data, error } = await supabase
     .from('autoblog_settings')
     .select('*')
@@ -22,7 +24,7 @@ export async function POST(request: Request) {
   if (auth instanceof NextResponse) return auth;
 
   const body = await request.json();
-  const supabase = await createServiceRoleClient();
+  const supabase = createEngineClient();
 
   const { error } = await supabase
     .from('autoblog_settings')
