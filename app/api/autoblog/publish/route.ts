@@ -87,8 +87,8 @@ export async function POST(request: Request) {
     content_type: resolveContentType('rfp', seo.schemaType),
     status: 'review',
     generated_by: 'ai-assisted',
+    // reading_time_minutes is GENERATED ALWAYS from word_count — never set it.
     word_count: wordCount,
-    reading_time_minutes: Math.ceil(wordCount / 200),
     jsonld_override: jsonldOverride,
     generated_at: run.completed_at,
     author_id: (auth as { userId: string }).userId,
