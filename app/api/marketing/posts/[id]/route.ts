@@ -1,7 +1,8 @@
 /** MK8-CMS-002: Blog post — get, patch, delete */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createServiceRoleClient, createServerSupabaseClient } from '@/lib/supabase/server'
+import { createServiceRoleClient } from '@/lib/supabase/server'
+import { requireContentAccess } from '@/lib/autoblog/auth'
 import { BlogPostUpdateSchema } from '@/lib/types/cms'
 import { appendAuditLog } from '@/lib/audit/log'
 
@@ -10,6 +11,9 @@ interface RouteContext {
 }
 
 export async function GET(_request: NextRequest, context: RouteContext) {
+  const auth = await requireContentAccess()
+  if (auth instanceof NextResponse) return auth
+
   const { id } = await context.params
   const supabase = await createServiceRoleClient()
 
@@ -24,11 +28,10 @@ export async function GET(_request: NextRequest, context: RouteContext) {
 }
 
 export async function PATCH(request: NextRequest, context: RouteContext) {
-  const { id } = await context.params
-  const authClient = await createServerSupabaseClient()
-  const { data: { user } } = await authClient.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const auth = await requireContentAccess()
+  if (auth instanceof NextResponse) return auth
 
+  const { id } = await context.params
   const supabase = await createServiceRoleClient()
   const body: unknown = await request.json()
   const parsed = BlogPostUpdateSchema.safeParse(body)
@@ -48,7 +51,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
   const eventType = parsed.data.status ? 'post-status-changed' : 'post-updated'
   await appendAuditLog(supabase, {
     event_type: eventType,
-    actor_id: user.id,
+    actor_id: auth.userId,
     actor_type: 'user',
     resource_type: 'post',
     resource_id: id,
@@ -59,18 +62,17 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 }
 
 export async function DELETE(_request: NextRequest, context: RouteContext) {
-  const { id } = await context.params
-  const authClient = await createServerSupabaseClient()
-  const { data: { user } } = await authClient.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const auth = await requireContentAccess()
+  if (auth instanceof NextResponse) return auth
 
+  const { id } = await context.params
   const supabase = await createServiceRoleClient()
   const { error } = await supabase.from('blog_posts').delete().eq('id', id)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
   await appendAuditLog(supabase, {
     event_type: 'post-updated',
-    actor_id: user.id,
+    actor_id: auth.userId,
     actor_type: 'user',
     resource_type: 'post',
     resource_id: id,

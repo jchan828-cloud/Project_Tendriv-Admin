@@ -1,12 +1,11 @@
 /** MK8-INT-001: AI content brief generator */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@/lib/supabase/server'
+import { requireContentAccess } from '@/lib/autoblog/auth'
 
 export async function POST(request: NextRequest) {
-  const authClient = await createServerSupabaseClient()
-  const { data: { user } } = await authClient.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const auth = await requireContentAccess()
+  if (auth instanceof NextResponse) return auth
 
   const body: unknown = await request.json()
   if (!body || typeof body !== 'object' || Array.isArray(body)) {

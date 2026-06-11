@@ -1,12 +1,16 @@
 /** MK8-ANL-001: UTM campaigns — list + create */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createServiceRoleClient, createServerSupabaseClient } from '@/lib/supabase/server'
+import { createServiceRoleClient } from '@/lib/supabase/server'
+import { requireContentAccess } from '@/lib/autoblog/auth'
 import { UtmCampaignInsertSchema } from '@/lib/types/analytics'
 import { appendAuditLog } from '@/lib/audit/log'
 import { generateShortCode } from '@/lib/utils/short-code'
 
 export async function GET() {
+  const auth = await requireContentAccess()
+  if (auth instanceof NextResponse) return auth
+
   const supabase = await createServiceRoleClient()
   const { data, error } = await supabase
     .from('utm_campaigns')
@@ -18,9 +22,8 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
-  const authClient = await createServerSupabaseClient()
-  const { data: { user } } = await authClient.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const auth = await requireContentAccess()
+  if (auth instanceof NextResponse) return auth
 
   const supabase = await createServiceRoleClient()
   const body: unknown = await request.json()
@@ -46,7 +49,7 @@ export async function POST(request: NextRequest) {
       ...d,
       full_url: fullUrl,
       short_code: shortCode,
-      created_by: user.id,
+      created_by: auth.userId,
     })
     .select()
     .single()
@@ -55,7 +58,7 @@ export async function POST(request: NextRequest) {
 
   await appendAuditLog(supabase, {
     event_type: 'utm-created',
-    actor_id: user.id,
+    actor_id: auth.userId,
     actor_type: 'user',
     resource_type: 'utm',
     resource_id: utm.id,

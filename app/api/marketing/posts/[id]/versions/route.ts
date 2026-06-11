@@ -1,7 +1,8 @@
 /** MK8-CMS-008: Post versions — list + create */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createServiceRoleClient, createServerSupabaseClient } from '@/lib/supabase/server'
+import { createServiceRoleClient } from '@/lib/supabase/server'
+import { requireContentAccess } from '@/lib/autoblog/auth'
 import { appendAuditLog } from '@/lib/audit/log'
 
 interface RouteContext {
@@ -21,6 +22,9 @@ function extractContentText(content: unknown): string {
 }
 
 export async function GET(request: NextRequest, context: RouteContext) {
+  const auth = await requireContentAccess()
+  if (auth instanceof NextResponse) return auth
+
   const { id } = await context.params
   const supabase = await createServiceRoleClient()
   const url = new URL(request.url)
@@ -70,10 +74,10 @@ export async function GET(request: NextRequest, context: RouteContext) {
 }
 
 export async function POST(request: NextRequest, context: RouteContext) {
-  const { id } = await context.params
-  const authClient = await createServerSupabaseClient()
-  const { data: { user } } = await authClient.auth.getUser()
+  const auth = await requireContentAccess()
+  if (auth instanceof NextResponse) return auth
 
+  const { id } = await context.params
   const supabase = await createServiceRoleClient()
   const body: unknown = await request.json()
 
@@ -101,7 +105,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
       post_id: id,
       version_number: nextVersion,
       content,
-      changed_by: user?.id ?? null,
+      changed_by: auth.userId,
       change_type: changeType,
     })
     .select()
@@ -111,7 +115,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
 
   await appendAuditLog(supabase, {
     event_type: 'post-version-created',
-    actor_id: user?.id ?? null,
+    actor_id: auth.userId,
     actor_type: 'user',
     resource_type: 'version',
     resource_id: data.id,

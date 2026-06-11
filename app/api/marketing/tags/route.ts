@@ -1,7 +1,8 @@
 /** MK8-CMS-004: Tags — list + create */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createServiceRoleClient, createServerSupabaseClient } from '@/lib/supabase/server'
+import { createServiceRoleClient } from '@/lib/supabase/server'
+import { requireContentAccess } from '@/lib/autoblog/auth'
 import { TagCreateSchema } from '@/lib/types/cms'
 import { appendAuditLog } from '@/lib/audit/log'
 
@@ -10,6 +11,9 @@ function slugify(text: string): string {
 }
 
 export async function GET(request: NextRequest) {
+  const auth = await requireContentAccess()
+  if (auth instanceof NextResponse) return auth
+
   const supabase = await createServiceRoleClient()
   const q = new URL(request.url).searchParams.get('q') ?? ''
 
@@ -22,9 +26,8 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const authClient = await createServerSupabaseClient()
-  const { data: { user } } = await authClient.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const auth = await requireContentAccess()
+  if (auth instanceof NextResponse) return auth
 
   const supabase = await createServiceRoleClient()
   const body: unknown = await request.json()
@@ -46,7 +49,7 @@ export async function POST(request: NextRequest) {
 
   await appendAuditLog(supabase, {
     event_type: 'tag-created',
-    actor_id: user.id,
+    actor_id: auth.userId,
     actor_type: 'user',
     resource_type: 'tag',
     resource_id: data.id,

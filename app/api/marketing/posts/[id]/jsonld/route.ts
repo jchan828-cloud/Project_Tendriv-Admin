@@ -2,6 +2,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceRoleClient } from '@/lib/supabase/server'
+import { requireContentAccess } from '@/lib/autoblog/auth'
 import { inferSchemaType, generateArticleSchema, generateFaqSchema, generateHowToSchema } from '@/lib/cms/jsonld'
 import { appendAuditLog } from '@/lib/audit/log'
 
@@ -10,6 +11,9 @@ interface RouteContext {
 }
 
 export async function GET(_request: NextRequest, context: RouteContext) {
+  const auth = await requireContentAccess()
+  if (auth instanceof NextResponse) return auth
+
   const { id } = await context.params
   const supabase = await createServiceRoleClient()
 
@@ -31,6 +35,9 @@ export async function GET(_request: NextRequest, context: RouteContext) {
 }
 
 export async function POST(request: NextRequest, context: RouteContext) {
+  const auth = await requireContentAccess()
+  if (auth instanceof NextResponse) return auth
+
   const { id } = await context.params
   const supabase = await createServiceRoleClient()
   const body: unknown = await request.json()
@@ -63,8 +70,8 @@ export async function POST(request: NextRequest, context: RouteContext) {
 
   await appendAuditLog(supabase, {
     event_type: 'post-jsonld-updated',
-    actor_id: null,
-    actor_type: 'system',
+    actor_id: auth.userId,
+    actor_type: 'user',
     resource_type: 'post',
     resource_id: id,
     metadata: { schema_type: schemaType },
