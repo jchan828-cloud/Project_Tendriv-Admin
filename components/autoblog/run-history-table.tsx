@@ -97,13 +97,14 @@ export function RunHistoryTable({ runs, onSelectRun }: RunHistoryTableProps) {
                     textOverflow: 'ellipsis',
                     whiteSpace: 'nowrap',
                   }}
-                  title={run.headline ?? run.tender_id}
+                  title={run.headline ?? run.tender_id ?? run.run_id}
                 >
-                  {run.headline
-                    ? run.headline.length > 60
-                      ? run.headline.slice(0, 60) + '…'
-                      : run.headline
-                    : run.tender_id.slice(0, 12) + '…'}
+                  {/* Engine rows: pillar runs have null tender_id AND may have
+                      null headline (failed runs) — run_id always exists. */}
+                  {(() => {
+                    const label = run.headline ?? run.tender_id ?? run.run_id
+                    return label.length > 60 ? label.slice(0, 60) + '…' : label
+                  })()}
                 </span>
               </td>
               <td style={{ padding: '12px 16px' }}>

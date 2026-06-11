@@ -13,6 +13,7 @@ export const FREQUENCY_OPTIONS = [
 export const STATUS_CONFIG = {
   running: { label: 'Running', color: 'var(--status-warning)', bg: 'var(--status-warning-bg)' },
   completed: { label: 'Completed', color: 'var(--status-success)', bg: 'var(--status-success-bg)' },
+  review: { label: 'In review', color: 'var(--status-warning)', bg: 'var(--status-warning-bg)' },
   published: { label: 'Published', color: 'var(--status-success)', bg: 'var(--status-success-bg)' },
   failed: { label: 'Failed', color: 'var(--sovereign)', bg: 'var(--sovereign-pale)' },
   rejected: { label: 'Rejected', color: 'var(--sovereign)', bg: 'var(--sovereign-pale)' },
