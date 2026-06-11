@@ -9,11 +9,13 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { PostStatus, BuyerStageValues } from '@/lib/types/cms'
 import type { BuyerStage, ContentType } from '@/lib/types/cms'
+import { callReviewAction } from '@/lib/autoblog/review-client'
 
 /** Lightweight subset of BlogPost used by the calendar views */
 export type CalendarPost = {
   id: string
   title: string
+  slug: string
   status: PostStatus
   buyer_stage: BuyerStage | null
   content_type: ContentType | null
@@ -86,6 +88,22 @@ export function CalendarBoard({ posts }: CalendarBoardProps) {
     finally { setBusy(null) }
   }, [router])
 
+  // Promote/Reject on Review cards — same routes as the autoblog Approvals
+  // tab and the Edit Post page; the cross-DB logic stays server-side.
+  const handleReviewAction = useCallback(async (post: CalendarPost, action: 'promote' | 'reject') => {
+    setBusy(post.id)
+    const outcome = await callReviewAction(action, post.slug)
+    if (outcome.status === 'error') {
+      alert(outcome.message ?? `${action} failed.`)
+    } else {
+      // done, partial, or conflict: the board re-reads the truth either way,
+      // and partial/conflict detail is surfaced before the refresh.
+      if (outcome.message) alert(outcome.message)
+      router.refresh()
+    }
+    setBusy(null)
+  }, [router])
+
   // Persist view preference
   useEffect(() => {
     const saved = localStorage.getItem('tendriv-calendar-view')
@@ -148,7 +166,13 @@ export function CalendarBoard({ posts }: CalendarBoardProps) {
 
       {/* Views */}
       {view === 'kanban' ? (
-        <KanbanView posts={posts} busy={busy} onDelete={handleDelete} onRetry={handleRetry} />
+        <KanbanView
+          posts={posts}
+          busy={busy}
+          onDelete={handleDelete}
+          onRetry={handleRetry}
+          onReviewAction={handleReviewAction}
+        />
       ) : (
         <ListView
           posts={filteredPosts}
@@ -159,6 +183,7 @@ export function CalendarBoard({ posts }: CalendarBoardProps) {
           busy={busy}
           onDelete={handleDelete}
           onRetry={handleRetry}
+          onReviewAction={handleReviewAction}
         />
       )}
     </div>
@@ -169,9 +194,10 @@ interface RowActionProps {
   busy: string | null
   onDelete: (id: string, title: string) => void
   onRetry: (id: string) => void
+  onReviewAction: (post: CalendarPost, action: 'promote' | 'reject') => void
 }
 
-function KanbanView({ posts, busy, onDelete, onRetry }: { posts: CalendarPost[] } & RowActionProps) {
+function KanbanView({ posts, busy, onDelete, onRetry, onReviewAction }: { posts: CalendarPost[] } & RowActionProps) {
   return (
     <div className="grid grid-cols-2 gap-4 lg:grid-cols-3 xl:grid-cols-6">
       {KANBAN_COLUMNS.map((col) => {
@@ -207,6 +233,26 @@ function KanbanView({ posts, busy, onDelete, onRetry }: { posts: CalendarPost[] 
                     </p>
                   </Link>
                   <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    {p.status === 'review' && (
+                      <>
+                        <button
+                          onClick={() => onReviewAction(p, 'promote')}
+                          disabled={busy === p.id}
+                          className="text-[var(--status-success)] hover:bg-[var(--status-success)]/10 rounded px-1.5 py-0.5 text-body-xs"
+                          title="Promote — publish to tendriv.ca"
+                        >
+                          {busy === p.id ? '...' : 'Promote'}
+                        </button>
+                        <button
+                          onClick={() => onReviewAction(p, 'reject')}
+                          disabled={busy === p.id}
+                          className="text-[var(--sovereign)] hover:bg-[var(--sovereign)]/10 rounded px-1.5 py-0.5 text-body-xs"
+                          title="Reject — archive and recycle topic"
+                        >
+                          {busy === p.id ? '...' : 'Reject'}
+                        </button>
+                      </>
+                    )}
                     {p.status === 'failed' && (
                       <button
                         onClick={() => onRetry(p.id)}
@@ -248,6 +294,7 @@ function ListView({
   busy,
   onDelete,
   onRetry,
+  onReviewAction,
 }: {
   posts: CalendarPost[]
   statusFilter: string
@@ -336,6 +383,24 @@ function ListView({
                   {new Date(p.updated_at).toLocaleDateString('en-CA')}
                 </td>
                 <td className="px-4 py-3 whitespace-nowrap">
+                  {p.status === 'review' && (
+                    <>
+                      <button
+                        onClick={() => onReviewAction(p, 'promote')}
+                        disabled={busy === p.id}
+                        className="text-body-xs text-[var(--status-success)] hover:underline disabled:opacity-50 mr-2"
+                      >
+                        {busy === p.id ? '...' : 'Promote'}
+                      </button>
+                      <button
+                        onClick={() => onReviewAction(p, 'reject')}
+                        disabled={busy === p.id}
+                        className="text-body-xs text-[var(--sovereign)] hover:underline disabled:opacity-50 mr-2"
+                      >
+                        {busy === p.id ? '...' : 'Reject'}
+                      </button>
+                    </>
+                  )}
                   {p.status === 'failed' && (
                     <button
                       onClick={() => onRetry(p.id)}

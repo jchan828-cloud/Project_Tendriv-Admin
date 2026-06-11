@@ -3,8 +3,10 @@
 /** MK8-CMS-002: Rich editor with auto-save, word count, and preview */
 
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 import { BlogPost } from '@/lib/types/cms'
 import { FrontmatterPanel } from './frontmatter-panel'
+import { callReviewAction } from '@/lib/autoblog/review-client'
 
 type SaveStatus = 'idle' | 'saving' | 'saved' | 'error'
 
@@ -17,9 +19,12 @@ function countWords(text: string): number {
 }
 
 export function PostEditor({ initialPost }: PostEditorProps) {
+  const router = useRouter()
   const [post, setPost] = useState<BlogPost>(initialPost)
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle')
   const [showPreview, setShowPreview] = useState(false)
+  const [reviewBusy, setReviewBusy] = useState(false)
+  const [reviewNotice, setReviewNotice] = useState<string | null>(null)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const pendingRef = useRef<Partial<BlogPost> | null>(null)
 
@@ -101,6 +106,50 @@ export function PostEditor({ initialPost }: PostEditorProps) {
     }
   }, [post])
 
+  // Approval actions for review-state posts. Same routes as the autoblog
+  // Approvals tab and the calendar cards — the cross-DB promote/reject logic
+  // lives server-side; this surface only calls it by slug.
+  const handleReviewAction = useCallback(
+    async (action: 'promote' | 'reject') => {
+      if (reviewBusy) return
+      setReviewBusy(true)
+      setReviewNotice(null)
+      const outcome = await callReviewAction(action, post.slug)
+
+      if (outcome.status === 'error') {
+        setReviewNotice(outcome.message)
+      } else if (outcome.status === 'conflict') {
+        // Someone else actioned it — pull the authoritative status.
+        setReviewNotice('Already actioned by another reviewer.')
+        try {
+          const res = await fetch(`/api/marketing/posts/${post.id}`)
+          if (res.ok) {
+            const fresh = (await res.json()) as BlogPost
+            setPost((prev) => ({ ...prev, status: fresh.status, published_at: fresh.published_at }))
+          }
+        } catch {
+          // Notice already shown; the server badge updates via refresh below.
+        }
+        router.refresh()
+      } else {
+        setPost((prev) => ({
+          ...prev,
+          status: action === 'promote' ? 'published' : 'archived',
+        }))
+        setReviewNotice(
+          outcome.status === 'partial'
+            ? outcome.message
+            : action === 'promote'
+              ? 'Published — live on tendriv.ca.'
+              : 'Rejected — post archived, topic recycled.'
+        )
+        router.refresh()
+      }
+      setReviewBusy(false)
+    },
+    [post.id, post.slug, reviewBusy, router]
+  )
+
   const readingTime = Math.max(1, Math.floor(post.word_count / 200))
 
   // On <md, render front-matter below the editor so the textarea
@@ -141,8 +190,30 @@ export function PostEditor({ initialPost }: PostEditorProps) {
                 Submit for Review
               </button>
             )}
+            {post.status === 'review' && (
+              <>
+                <button
+                  className="btn-primary btn-sm"
+                  onClick={() => handleReviewAction('promote')}
+                  disabled={reviewBusy}
+                >
+                  {reviewBusy ? 'Working…' : 'Promote'}
+                </button>
+                <button
+                  className="btn-sm text-[var(--sovereign)] hover:underline disabled:opacity-50"
+                  onClick={() => handleReviewAction('reject')}
+                  disabled={reviewBusy}
+                >
+                  Reject
+                </button>
+              </>
+            )}
           </div>
         </div>
+
+        {reviewNotice && (
+          <p className="text-body-sm mb-3 text-[var(--sovereign)]">{reviewNotice}</p>
+        )}
 
         {/* Content area */}
         {showPreview ? (
