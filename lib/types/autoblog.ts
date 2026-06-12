@@ -3,7 +3,7 @@ import type { Tables } from './database.types'
 type AutoblogRunRow = Tables<'autoblog_runs'>
 type AutoblogSettingsRow = Tables<'autoblog_settings'>
 
-export type AutoblogRunStatus = 'running' | 'completed' | 'published' | 'failed' | 'rejected' | 'timeout'
+export type AutoblogRunStatus = 'running' | 'completed' | 'review' | 'published' | 'failed' | 'rejected' | 'timeout'
 
 export type AutoblogRun = Omit<AutoblogRunRow, 'status' | 'seo_metadata'> & {
   status: AutoblogRunStatus

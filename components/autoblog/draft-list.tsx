@@ -85,7 +85,7 @@ export function DraftList({ drafts, selectedId, onSelect }: DraftListProps) {
                 overflow: 'hidden',
               }}
             >
-              {draft.headline ?? draft.tender_id}
+              {draft.headline ?? draft.tender_id ?? draft.run_id}
             </p>
 
             {/* Meta row */}

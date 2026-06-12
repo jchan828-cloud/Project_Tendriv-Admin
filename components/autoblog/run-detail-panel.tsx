@@ -118,7 +118,7 @@ export function RunDetailPanel({ run, onClose, onViewLive, onGoToReview }: RunDe
                 WebkitBoxOrient: 'vertical',
               }}
             >
-              {run.headline ?? run.tender_id}
+              {run.headline ?? run.tender_id ?? run.run_id}
             </h3>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <StatusBadge status={run.status} />
@@ -266,7 +266,9 @@ export function RunDetailPanel({ run, onClose, onViewLive, onGoToReview }: RunDe
                 }}
               >
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                  <span className="badge badge-jade">{seo.primaryKeyword}</span>
+                  {seo.primaryKeyword && (
+                    <span className="badge badge-jade">{seo.primaryKeyword}</span>
+                  )}
                   {seo.schemaType && (
                     <span className="badge badge-info">{seo.schemaType}</span>
                   )}
@@ -350,7 +352,7 @@ export function RunDetailPanel({ run, onClose, onViewLive, onGoToReview }: RunDe
             }}
           >
             <span>run: {run.run_id}</span>
-            <span>tender: {run.tender_id}</span>
+            {run.tender_id && <span>tender: {run.tender_id}</span>}
             {run.published_slug && <span>slug: {run.published_slug}</span>}
           </div>
         </div>

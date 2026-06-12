@@ -3,7 +3,7 @@
 import { useState, useCallback } from 'react'
 import ReactMarkdown from 'react-markdown'
 import type { ReviewQueueItem } from '@/lib/types/autoblog'
-import type { ReviewActionResult } from '@/lib/autoblog/review-actions'
+import { callReviewAction } from '@/lib/autoblog/review-client'
 
 // The approval surface: marketing blog_posts in 'review', enriched with the
 // engine run (scores, cost) via slug == published_slug. Promote flips the post
@@ -41,35 +41,17 @@ export function ApprovalsTab({ initialItems, queueWarning }: ApprovalsTabProps) 
       const slug = selected.post.slug
       setBusy(true)
       setNotice(null)
-      try {
-        const res = await fetch(`/api/autoblog/${action}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ slug }),
-        })
-        const body = (await res.json().catch(() => null)) as ReviewActionResult | null
-
-        if (res.status === 409) {
-          removeItem(slug)
-          setNotice('Already actioned by another reviewer — removed from queue.')
-          return
-        }
-        if (!res.ok) {
-          throw new Error(body?.marketing?.detail ?? `HTTP ${res.status}`)
-        }
+      const outcome = await callReviewAction(action, slug)
+      if (outcome.status === 'conflict') {
         removeItem(slug)
-        if (body && !body.ok) {
-          // Marketing succeeded but a later step didn't — partial state, say so.
-          const details = [body.engine, body.topic]
-            .filter((s): s is NonNullable<typeof s> => s != null && !s.ok)
-            .map((s) => s.detail)
-          setNotice(`Partial: ${details.join('; ') || 'a follow-up step failed'}`)
-        }
-      } catch (err) {
-        setNotice(err instanceof Error ? err.message : `${action} failed`)
-      } finally {
-        setBusy(false)
+        setNotice('Already actioned by another reviewer — removed from queue.')
+      } else if (outcome.status === 'error') {
+        setNotice(outcome.message)
+      } else {
+        removeItem(slug)
+        if (outcome.status === 'partial') setNotice(outcome.message)
       }
+      setBusy(false)
     },
     [selected, busy, removeItem]
   )
