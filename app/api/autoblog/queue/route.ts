@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { createServiceRoleClient } from '@/lib/supabase/server';
-import { createEngineClient } from '@/lib/supabase/engine';
 import { requireContentAccess } from '@/lib/autoblog/auth';
 import { fetchReviewQueue } from '@/lib/autoblog/review-queue';
 
@@ -8,11 +7,12 @@ export async function GET() {
   const auth = await requireContentAccess();
   if (auth instanceof NextResponse) return auth;
 
-  const marketing = await createServiceRoleClient();
-  const engine = createEngineClient();
+  // Single-DB now: blog_posts and autoblog_runs share the marketing DB, so the
+  // review-queue join runs through one client.
+  const supabase = await createServiceRoleClient();
 
   try {
-    const queue = await fetchReviewQueue(marketing, engine);
+    const queue = await fetchReviewQueue(supabase);
     return NextResponse.json(queue);
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Queue fetch failed';

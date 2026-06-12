@@ -1,45 +1,48 @@
 import { describe, it, expect } from 'vitest';
 import { fetchReviewQueue } from '@/lib/autoblog/review-queue';
 
-// Cross-DB join: marketing blog_posts (status='review') enriched with engine
-// runs on slug == published_slug. Marketing is the source of truth — engine
-// failures degrade rows, never hide them.
+// Single-DB join since the blog consolidation: blog_posts (status='review')
+// enriched with autoblog_runs on slug == published_slug, all through ONE
+// client. blog_posts is the source of truth — a run read failure degrades
+// rows, never hides them.
 
 type Row = Record<string, unknown>;
 
-function makeMarketing(posts: Row[] | null, error: { message: string } | null = null) {
-  return {
-    from: (table: string) => ({
-      select: () => ({
-        eq: (col: string, val: string) => ({
-          order: async () => {
-            expect(table).toBe('blog_posts');
-            expect(col).toBe('status');
-            expect(val).toBe('review');
-            return { data: posts, error };
-          },
-        }),
-      }),
-    }),
-  };
-}
-
-function makeEngine(
+function makeClient(
+  posts: Row[] | null,
   runs: Row[] | null,
-  error: { message: string } | null = null,
-  capture?: { slugs?: unknown },
+  opts: {
+    postError?: { message: string } | null;
+    runError?: { message: string } | null;
+    capture?: { slugs?: unknown };
+  } = {},
 ) {
   return {
-    from: (table: string) => ({
-      select: () => ({
-        in: async (col: string, vals: unknown) => {
-          expect(table).toBe('autoblog_runs');
-          expect(col).toBe('published_slug');
-          if (capture) capture.slugs = vals;
-          return { data: runs, error };
-        },
-      }),
-    }),
+    from: (table: string) => {
+      if (table === 'blog_posts') {
+        return {
+          select: () => ({
+            eq: (col: string, val: string) => ({
+              order: async () => {
+                expect(col).toBe('status');
+                expect(val).toBe('review');
+                return { data: posts, error: opts.postError ?? null };
+              },
+            }),
+          }),
+        };
+      }
+      // autoblog_runs — same client, single DB now.
+      return {
+        select: () => ({
+          in: async (col: string, vals: unknown) => {
+            expect(col).toBe('published_slug');
+            if (opts.capture) opts.capture.slugs = vals;
+            return { data: runs, error: opts.runError ?? null };
+          },
+        }),
+      };
+    },
   };
 }
 
@@ -58,12 +61,9 @@ const RUN_A = {
 };
 
 describe('fetchReviewQueue', () => {
-  it('joins each post to its engine run by slug == published_slug', async () => {
+  it('joins each post to its run by slug == published_slug through one client', async () => {
     const capture: { slugs?: unknown } = {};
-    const queue = await fetchReviewQueue(
-      makeMarketing([POST_A, POST_B]),
-      makeEngine([RUN_A], null, capture),
-    );
+    const queue = await fetchReviewQueue(makeClient([POST_A, POST_B], [RUN_A], { capture }));
 
     expect(capture.slugs).toEqual(['shipley-guide-123', 'orphan-post-456']);
     expect(queue.items).toHaveLength(2);
@@ -74,30 +74,36 @@ describe('fetchReviewQueue', () => {
     expect(queue.engineError).toBeNull();
   });
 
-  it('returns rows with engineError when the engine read fails', async () => {
+  it('returns rows with engineError when the run read fails', async () => {
     const queue = await fetchReviewQueue(
-      makeMarketing([POST_A]),
-      makeEngine(null, { message: 'engine unreachable' }),
+      makeClient([POST_A], null, { runError: { message: 'runs unreadable' } }),
     );
 
     expect(queue.items).toHaveLength(1);
     expect(queue.items[0]!.run).toBeNull();
-    expect(queue.engineError).toBe('engine unreachable');
+    expect(queue.engineError).toBe('runs unreadable');
   });
 
-  it('skips the engine query entirely for an empty queue', async () => {
-    const engine = {
-      from: () => {
-        throw new Error('engine must not be queried for an empty queue');
+  it('skips the run query entirely for an empty queue', async () => {
+    const client = {
+      from: (table: string) => {
+        if (table === 'autoblog_runs') {
+          throw new Error('autoblog_runs must not be queried for an empty queue');
+        }
+        return {
+          select: () => ({
+            eq: () => ({ order: async () => ({ data: [], error: null }) }),
+          }),
+        };
       },
     };
-    const queue = await fetchReviewQueue(makeMarketing([]), engine);
+    const queue = await fetchReviewQueue(client);
     expect(queue).toEqual({ items: [], engineError: null });
   });
 
-  it('throws when the marketing read fails — there is no queue without it', async () => {
+  it('throws when the blog_posts read fails — there is no queue without it', async () => {
     await expect(
-      fetchReviewQueue(makeMarketing(null, { message: 'marketing down' }), makeEngine([])),
-    ).rejects.toThrow('marketing down');
+      fetchReviewQueue(makeClient(null, [], { postError: { message: 'posts down' } })),
+    ).rejects.toThrow('posts down');
   });
 });

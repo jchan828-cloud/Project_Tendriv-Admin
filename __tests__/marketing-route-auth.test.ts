@@ -41,7 +41,7 @@ const MUTATING: Record<string, () => Promise<Response>> = {
     (await import('@/app/api/marketing/posts/[id]/route')).DELETE(jsonReq('DELETE'), ctx()),
   'posts/[id]/publish POST': async () =>
     (await import('@/app/api/marketing/posts/[id]/publish/route')).POST(
-      jsonReq('POST', { channels: ['blog'] }),
+      jsonReq('POST', { channels: ['cyberimpact'] }),
       ctx()
     ),
   'posts/[id]/versions POST': async () =>

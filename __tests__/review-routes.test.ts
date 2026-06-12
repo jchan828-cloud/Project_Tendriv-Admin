@@ -1,24 +1,26 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { NextResponse } from 'next/server';
 
-// The new approval routes: all guarded by requireContentAccess, promote/reject
-// translate the action result into 409 (already actioned) / 500 (marketing
-// failed) / 200 (done — possibly with partial-state detail in the body).
+// The approval routes: all guarded by requireContentAccess. promote/reject/
+// submit translate the action result into 409 (already actioned) / 500 (post
+// update failed) / 200 (done — possibly with partial-state detail in the body).
+// Single-DB now: the actions take one client, never an engine client.
 
 let authResult: { userId: string } | NextResponse;
 let actionResult: Record<string, unknown>;
 const promotePostMock = vi.fn(async () => actionResult);
 const rejectPostMock = vi.fn(async () => actionResult);
+const submitPostMock = vi.fn(async () => actionResult);
 
 function mockDeps() {
   vi.doMock('@/lib/autoblog/auth', () => ({
     requireContentAccess: vi.fn(async () => authResult),
   }));
-  vi.doMock('@/lib/supabase/engine', () => ({ createEngineClient: () => ({}) }));
   vi.doMock('@/lib/supabase/server', () => ({ createServiceRoleClient: async () => ({}) }));
   vi.doMock('@/lib/autoblog/review-actions', () => ({
     promotePost: promotePostMock,
     rejectPost: rejectPostMock,
+    submitPostForReview: submitPostMock,
   }));
   vi.doMock('@/lib/autoblog/review-queue', () => ({
     fetchReviewQueue: vi.fn(async () => ({ items: [], engineError: null })),
@@ -33,8 +35,8 @@ const okResult = {
   ok: true,
   conflict: false,
   slug: 's',
-  marketing: { ok: true, detail: 'done' },
-  engine: { ok: true, detail: 'done' },
+  action: 'promote',
+  post: { ok: true, detail: 'done' },
   topic: null,
 };
 
@@ -43,6 +45,7 @@ describe('approval routes', () => {
     vi.resetModules();
     promotePostMock.mockClear();
     rejectPostMock.mockClear();
+    submitPostMock.mockClear();
     authResult = { userId: 'reviewer-1' };
     actionResult = { ...okResult };
   });
@@ -53,6 +56,8 @@ describe('approval routes', () => {
       (await import('@/app/api/autoblog/promote/route')).POST(makeRequest({ slug: 's' })),
     reject: async () =>
       (await import('@/app/api/autoblog/reject/route')).POST(makeRequest({ slug: 's' })),
+    submit: async () =>
+      (await import('@/app/api/autoblog/submit/route')).POST(makeRequest({ slug: 's' })),
   };
 
   it.each(Object.keys(ROUTE_CALLS))(
@@ -65,21 +70,23 @@ describe('approval routes', () => {
       expect(res.status).toBe(401);
       expect(promotePostMock).not.toHaveBeenCalled();
       expect(rejectPostMock).not.toHaveBeenCalled();
+      expect(submitPostMock).not.toHaveBeenCalled();
     },
   );
 
-  it('promote passes slug and reviewer to the action and returns its result', async () => {
+  it('promote passes slug and reviewer to the action (single client) and returns its result', async () => {
     mockDeps();
     const { POST } = await import('@/app/api/autoblog/promote/route');
     const res = await POST(makeRequest({ slug: 'shipley-guide-123' }));
 
     expect(res.status).toBe(200);
+    // One client arg, not two (no engine client anymore).
     expect(promotePostMock).toHaveBeenCalledWith(
-      expect.anything(),
       expect.anything(),
       'shipley-guide-123',
       'reviewer-1',
     );
+    expect(promotePostMock.mock.calls[0]).toHaveLength(3);
     expect(await res.json()).toMatchObject({ ok: true });
   });
 
@@ -96,7 +103,7 @@ describe('approval routes', () => {
       ...okResult,
       ok: false,
       conflict: true,
-      marketing: { ok: false, detail: 'already actioned' },
+      post: { ok: false, detail: 'already actioned' },
     };
     mockDeps();
     const { POST } = await import('@/app/api/autoblog/promote/route');
@@ -104,11 +111,11 @@ describe('approval routes', () => {
     expect(res.status).toBe(409);
   });
 
-  it('promote maps a marketing failure to 500', async () => {
+  it('promote maps a post-update failure to 500', async () => {
     actionResult = {
       ...okResult,
       ok: false,
-      marketing: { ok: false, detail: 'db down' },
+      post: { ok: false, detail: 'db down' },
     };
     mockDeps();
     const { POST } = await import('@/app/api/autoblog/promote/route');
@@ -116,33 +123,40 @@ describe('approval routes', () => {
     expect(res.status).toBe(500);
   });
 
-  it('promote returns 200 with partial-state body when only the engine step failed', async () => {
+  it('reject maps success to 200 and passes a single client', async () => {
+    actionResult = { ...okResult, action: 'reject' };
+    mockDeps();
+    const { POST } = await import('@/app/api/autoblog/reject/route');
+    const res = await POST(makeRequest({ slug: 's' }));
+    expect(res.status).toBe(200);
+    expect(rejectPostMock).toHaveBeenCalledWith(expect.anything(), 's', 'reviewer-1');
+    expect(rejectPostMock.mock.calls[0]).toHaveLength(3);
+  });
+
+  it('reject returns 200 with partial-state body when the topic recycle failed', async () => {
     actionResult = {
       ...okResult,
+      action: 'reject',
       ok: false,
-      engine: { ok: false, detail: 'post published but engine run update failed: timeout' },
+      topic: { ok: false, detail: 'topic recycle failed: rls denied' },
     };
     mockDeps();
-    const { POST } = await import('@/app/api/autoblog/promote/route');
+    const { POST } = await import('@/app/api/autoblog/reject/route');
     const res = await POST(makeRequest({ slug: 's' }));
 
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.ok).toBe(false);
-    expect(body.engine.detail).toContain('timeout');
+    expect(body.topic.detail).toContain('rls denied');
   });
 
-  it('reject maps conflict to 409 and success to 200', async () => {
+  it('submit maps draft → review success to 200 and conflict to 409', async () => {
+    actionResult = { ...okResult, action: 'submit' };
     mockDeps();
-    const { POST } = await import('@/app/api/autoblog/reject/route');
+    const { POST } = await import('@/app/api/autoblog/submit/route');
     const res = await POST(makeRequest({ slug: 's' }));
     expect(res.status).toBe(200);
-    expect(rejectPostMock).toHaveBeenCalledWith(
-      expect.anything(),
-      expect.anything(),
-      's',
-      'reviewer-1',
-    );
+    expect(submitPostMock).toHaveBeenCalledWith(expect.anything(), 's', 'reviewer-1');
   });
 
   it('queue returns the joined review queue', async () => {

@@ -48,14 +48,14 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 
   if (error || !post) return NextResponse.json({ error: error?.message ?? 'Not found' }, { status: 404 })
 
-  const eventType = parsed.data.status ? 'post-status-changed' : 'post-updated'
+  // W2: status can no longer arrive via the generic PATCH, so this is always a
+  // plain content edit. Status transitions audit themselves via promote/reject.
   await appendAuditLog(supabase, {
-    event_type: eventType,
+    event_type: 'post-updated',
     actor_id: auth.userId,
     actor_type: 'user',
     resource_type: 'post',
     resource_id: id,
-    metadata: parsed.data.status ? { new_status: parsed.data.status } : undefined,
   })
 
   return NextResponse.json(post)

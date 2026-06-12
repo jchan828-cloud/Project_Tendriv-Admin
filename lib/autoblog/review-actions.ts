@@ -1,9 +1,9 @@
-// Promote/Reject for the review queue, with the cross-DB consistency rule:
-// marketing first (it's the user-visible truth on tendriv.ca), engine second,
-// topic third. Each step's outcome is reported individually — a later-step
-// failure never pretends overall success and never rolls back an earlier step.
+// Promote/Reject for the review queue. Since the blog DB consolidation,
+// blog_posts is the single source of truth: there is no separate engine DB and
+// autoblog_runs make NO content claims, so promote/reject touch ONLY
+// blog_posts (W6) plus, on reject, the same-DB pillar_topics recycle.
 //
-// The `status = 'review'` guard on the marketing UPDATE is the concurrency
+// The `status = 'review'` guard on the blog_posts UPDATE is the concurrency
 // lock: 0 rows updated means another reviewer actioned the post first, and the
 // caller gets `conflict` instead of a double-fire.
 
@@ -17,30 +17,27 @@ export interface StepResult {
 export interface ReviewActionResult {
   /** True only when every applicable step succeeded. */
   ok: boolean;
-  /** Marketing guard hit: the post was no longer in 'review'. Nothing changed. */
+  /** Guard hit: the post was no longer in 'review'. Nothing changed. */
   conflict: boolean;
   slug: string;
-  action: 'promote' | 'reject';
-  marketing: StepResult;
-  engine: StepResult;
+  action: 'promote' | 'reject' | 'submit';
+  post: StepResult;
   /** Reject only; null when the action has no topic step (promote, or no linked topic). */
   topic: StepResult | null;
 }
 
-const SKIPPED: StepResult = { ok: false, detail: 'skipped: marketing step did not complete' };
+const SKIPPED: StepResult = { ok: false, detail: 'skipped: post step did not complete' };
 
 function finish(result: ReviewActionResult): ReviewActionResult {
   result.ok =
     !result.conflict &&
-    result.marketing.ok &&
-    result.engine.ok &&
+    result.post.ok &&
     (result.topic === null || result.topic.ok);
   return result;
 }
 
 export async function promotePost(
-  marketing: DbClient,
-  engine: DbClient,
+  db: DbClient,
   slug: string,
   reviewerId: string,
 ): Promise<ReviewActionResult> {
@@ -50,12 +47,13 @@ export async function promotePost(
     conflict: false,
     slug,
     action: 'promote',
-    marketing: SKIPPED,
-    engine: SKIPPED,
+    post: SKIPPED,
     topic: null,
   };
 
-  const { data: posts, error: postError } = await marketing
+  // The guarded review → published transition is the whole of promote now;
+  // autoblog_runs make no content claims, so there is no mirror update (W6).
+  const { data: posts, error: postError } = await db
     .from('blog_posts')
     .update({ status: 'published', published_at: now, reviewer_id: reviewerId })
     .eq('slug', slug)
@@ -63,37 +61,59 @@ export async function promotePost(
     .select('id');
 
   if (postError) {
-    result.marketing = { ok: false, detail: postError.message };
+    result.post = { ok: false, detail: postError.message };
     return finish(result);
   }
   if (!posts || posts.length === 0) {
     result.conflict = true;
-    result.marketing = { ok: false, detail: 'post is no longer in review — already actioned' };
+    result.post = { ok: false, detail: 'post is no longer in review — already actioned' };
     return finish(result);
   }
-  result.marketing = { ok: true, detail: 'blog_posts → published' };
+  result.post = { ok: true, detail: 'blog_posts → published' };
 
-  const { data: runs, error: runError } = await engine
-    .from('autoblog_runs')
-    .update({ status: 'published', published_at: now })
-    .eq('published_slug', slug)
-    .eq('status', 'review')
+  return finish(result);
+}
+
+export async function submitPostForReview(
+  db: DbClient,
+  slug: string,
+  reviewerId: string,
+): Promise<ReviewActionResult> {
+  const result: ReviewActionResult = {
+    ok: false,
+    conflict: false,
+    slug,
+    action: 'submit',
+    post: SKIPPED,
+    topic: null,
+  };
+
+  // Guarded draft → review. This is the ONLY path for the draft→review
+  // transition (W2 — the generic PATCH no longer accepts status). The
+  // status='draft' guard is the concurrency lock.
+  const { data: posts, error: postError } = await db
+    .from('blog_posts')
+    .update({ status: 'review', reviewer_id: reviewerId })
+    .eq('slug', slug)
+    .eq('status', 'draft')
     .select('id');
 
-  if (runError) {
-    result.engine = { ok: false, detail: `post published but engine run update failed: ${runError.message}` };
-  } else if (!runs || runs.length === 0) {
-    result.engine = { ok: false, detail: 'post published but no engine run in review matched this slug' };
-  } else {
-    result.engine = { ok: true, detail: 'autoblog_runs → published' };
+  if (postError) {
+    result.post = { ok: false, detail: postError.message };
+    return finish(result);
   }
+  if (!posts || posts.length === 0) {
+    result.conflict = true;
+    result.post = { ok: false, detail: 'post is no longer a draft — already actioned' };
+    return finish(result);
+  }
+  result.post = { ok: true, detail: 'blog_posts → review' };
 
   return finish(result);
 }
 
 export async function rejectPost(
-  marketing: DbClient,
-  engine: DbClient,
+  db: DbClient,
   slug: string,
   reviewerId: string,
 ): Promise<ReviewActionResult> {
@@ -102,12 +122,13 @@ export async function rejectPost(
     conflict: false,
     slug,
     action: 'reject',
-    marketing: SKIPPED,
-    engine: SKIPPED,
+    post: SKIPPED,
     topic: null,
   };
 
-  const { data: posts, error: postError } = await marketing
+  // Guarded review → archived. No autoblog_runs mirror (W6 — runs make no
+  // content claims). The topic_id on the blog_posts row drives the recycle.
+  const { data: posts, error: postError } = await db
     .from('blog_posts')
     .update({ status: 'archived', reviewer_id: reviewerId })
     .eq('slug', slug)
@@ -115,45 +136,29 @@ export async function rejectPost(
     .select('id, topic_id');
 
   if (postError) {
-    result.marketing = { ok: false, detail: postError.message };
+    result.post = { ok: false, detail: postError.message };
     return finish(result);
   }
   if (!posts || posts.length === 0) {
     result.conflict = true;
-    result.marketing = { ok: false, detail: 'post is no longer in review — already actioned' };
+    result.post = { ok: false, detail: 'post is no longer in review — already actioned' };
     return finish(result);
   }
-  result.marketing = { ok: true, detail: 'blog_posts → archived' };
+  result.post = { ok: true, detail: 'blog_posts → archived' };
 
-  const { data: runs, error: runError } = await engine
-    .from('autoblog_runs')
-    .update({ status: 'rejected' })
-    .eq('published_slug', slug)
-    .eq('status', 'review')
-    .select('id, topic_id');
-
-  if (runError) {
-    result.engine = { ok: false, detail: `post archived but engine run update failed: ${runError.message}` };
-  } else if (!runs || runs.length === 0) {
-    result.engine = { ok: false, detail: 'post archived but no engine run in review matched this slug' };
-  } else {
-    result.engine = { ok: true, detail: 'autoblog_runs → rejected' };
-  }
-
-  // Topic recycle: a rejected draft's topic re-enters rotation. The run's
-  // topic_id is authoritative; the blog_posts row carries a copy as fallback.
+  // Topic recycle: a rejected draft's topic re-enters rotation. Now a same-DB
+  // update keyed on the blog_posts row's topic_id — the previously-planned
+  // engine-endpoint round-trip is obsolete since the tables share one DB.
   const topicId: string | null =
-    (runs?.[0]?.topic_id as string | null | undefined) ??
-    (posts[0]?.topic_id as string | null | undefined) ??
-    null;
+    (posts[0]?.topic_id as string | null | undefined) ?? null;
 
   if (!topicId) {
-    // rfp-workflow runs have no topic — nothing to recycle, and that's fine.
+    // rfp-workflow posts have no topic — nothing to recycle, and that's fine.
     result.topic = null;
     return finish(result);
   }
 
-  const { data: topics, error: topicError } = await engine
+  const { data: topics, error: topicError } = await db
     .from('pillar_topics')
     .update({ status: 'queued' })
     .eq('id', topicId)

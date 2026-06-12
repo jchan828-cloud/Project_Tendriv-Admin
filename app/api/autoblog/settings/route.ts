@@ -1,14 +1,14 @@
 import { NextResponse } from 'next/server';
-import { createEngineClient } from '@/lib/supabase/engine';
+import { createServiceRoleClient } from '@/lib/supabase/server';
 import { requireContentAccess } from '@/lib/autoblog/auth';
 
 export async function GET() {
   const auth = await requireContentAccess();
   if (auth instanceof NextResponse) return auth;
 
-  // autoblog_settings lives in the engine DB — the workflow reads its schedule
-  // from there, so the admin UI must edit the same row.
-  const supabase = createEngineClient();
+  // Since the blog DB consolidation, autoblog_settings lives in the same
+  // marketing DB — read through the single service-role client.
+  const supabase = await createServiceRoleClient();
   const { data, error } = await supabase
     .from('autoblog_settings')
     .select('*')
@@ -24,7 +24,7 @@ export async function POST(request: Request) {
   if (auth instanceof NextResponse) return auth;
 
   const body = await request.json();
-  const supabase = createEngineClient();
+  const supabase = await createServiceRoleClient();
 
   const { error } = await supabase
     .from('autoblog_settings')

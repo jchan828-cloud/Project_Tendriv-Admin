@@ -84,7 +84,6 @@ describe('AutoblogPage with the real engine-row fixtures', () => {
         initialQueue={[SHIPLEY_QUEUE_ITEM]}
       />
     )
-    fireEvent.click(screen.getByText('Review Queue'))
     fireEvent.click(screen.getByText('Approvals'))
     // Quality badge renders in both the list item and the action bar.
     expect(screen.getAllByText('4.63/5').length).toBeGreaterThan(0)

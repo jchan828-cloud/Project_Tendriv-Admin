@@ -84,10 +84,11 @@ export function PostEditor({ initialPost }: PostEditorProps) {
   const handleSubmitForReview = useCallback(async () => {
     setSaveStatus('saving')
     try {
-      const res = await fetch(`/api/marketing/posts/${post.id}`, {
-        method: 'PATCH',
+      // W2: dedicated guarded draft → review transition (not the generic PATCH).
+      const res = await fetch(`/api/autoblog/submit`, {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: 'review' }),
+        body: JSON.stringify({ slug: post.slug }),
       })
       if (res.ok) {
         setPost((prev) => ({ ...prev, status: 'review' }))
