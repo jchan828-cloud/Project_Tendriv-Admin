@@ -9,7 +9,6 @@ interface RunDetailPanelProps {
   run: AutoblogRun
   onClose: () => void
   onViewLive?: () => void
-  onGoToReview?: () => void
 }
 
 function formatDate(dateStr: string): string {
@@ -58,12 +57,11 @@ function MetaRow({ icon, label, children }: { icon: React.ReactNode; label: stri
   )
 }
 
-export function RunDetailPanel({ run, onClose, onViewLive, onGoToReview }: RunDetailPanelProps) {
+export function RunDetailPanel({ run, onClose, onViewLive }: RunDetailPanelProps) {
   const seo = run.seo_metadata
 
   const isRunning = run.status === 'running'
   const isPublished = run.status === 'published' || (run.status === 'completed' && !!run.published_slug)
-  const isPendingReview = run.status === 'completed' && !run.published_slug
 
   return (
     <div
@@ -154,26 +152,15 @@ export function RunDetailPanel({ run, onClose, onViewLive, onGoToReview }: RunDe
         {/* Scrollable body */}
         <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px' }}>
           {/* Quick actions */}
-          {(isRunning || isPendingReview) && (
+          {isRunning && onViewLive && (
             <div style={{ marginBottom: 16 }}>
-              {isRunning && onViewLive && (
-                <button
-                  onClick={onViewLive}
-                  className="btn-primary btn-sm"
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
-                >
-                  <Zap size={13} /> Watch live
-                </button>
-              )}
-              {isPendingReview && onGoToReview && (
-                <button
-                  onClick={onGoToReview}
-                  className="btn-primary btn-sm"
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
-                >
-                  <FileText size={13} /> Review &amp; publish
-                </button>
-              )}
+              <button
+                onClick={onViewLive}
+                className="btn-primary btn-sm"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+              >
+                <Zap size={13} /> Watch live
+              </button>
             </div>
           )}
 

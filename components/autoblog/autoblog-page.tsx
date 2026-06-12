@@ -2,16 +2,14 @@
 
 import { useState } from 'react'
 import { DashboardTab } from './dashboard-tab'
-import { ReviewTab } from './review-tab'
 import { ApprovalsTab } from './approvals-tab'
 import { SettingsTab } from './settings-tab'
 import type { AutoblogRun, AutoblogSettings, ReviewQueueItem } from '@/lib/types/autoblog'
 
-type Tab = 'dashboard' | 'review' | 'approvals' | 'settings'
+type Tab = 'dashboard' | 'approvals' | 'settings'
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'dashboard', label: 'Dashboard' },
-  { id: 'review', label: 'Review Queue' },
   { id: 'approvals', label: 'Approvals' },
   { id: 'settings', label: 'Settings' },
 ]
@@ -30,11 +28,6 @@ export function AutoblogPage({
   queueWarning = null,
 }: AutoblogPageProps) {
   const [activeTab, setActiveTab] = useState<Tab>('dashboard')
-
-  // Badge count for review queue
-  const reviewCount = initialRuns.filter(
-    (r) => r.status === 'completed' && r.published_slug == null
-  ).length
 
   // Badge count for approvals: marketing posts sitting in 'review'
   const approvalsCount = initialQueue.length
@@ -87,8 +80,7 @@ export function AutoblogPage({
               }}
             >
               {tab.label}
-              {((tab.id === 'review' && reviewCount > 0) ||
-                (tab.id === 'approvals' && approvalsCount > 0)) && (
+              {tab.id === 'approvals' && approvalsCount > 0 && (
                 <span
                   style={{
                     fontSize: 10,
@@ -100,7 +92,7 @@ export function AutoblogPage({
                     fontWeight: 600,
                   }}
                 >
-                  {tab.id === 'review' ? reviewCount : approvalsCount}
+                  {approvalsCount}
                 </span>
               )}
             </button>
@@ -109,13 +101,7 @@ export function AutoblogPage({
       </div>
 
       {/* Active tab content */}
-      {activeTab === 'dashboard' && (
-        <DashboardTab
-          initialRuns={initialRuns}
-          onSwitchToReview={() => setActiveTab('review')}
-        />
-      )}
-      {activeTab === 'review' && <ReviewTab initialRuns={initialRuns} />}
+      {activeTab === 'dashboard' && <DashboardTab initialRuns={initialRuns} />}
       {activeTab === 'approvals' && (
         <ApprovalsTab initialItems={initialQueue} queueWarning={queueWarning} />
       )}

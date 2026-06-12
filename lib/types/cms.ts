@@ -8,7 +8,8 @@ export const BuyerStageValues = ['awareness', 'consideration', 'decision'] as co
 export type BuyerStage = (typeof BuyerStageValues)[number]
 export const BuyerStageSchema = z.enum(BuyerStageValues)
 
-export const ContentTypeValues = ['blog', 'case-study', 'guide', 'whitepaper'] as const
+// Aligned to the live blog_posts.content_type CHECK (W3).
+export const ContentTypeValues = ['blog', 'case-study', 'guide', 'whitepaper', 'howto', 'news', 'article'] as const
 export type ContentType = (typeof ContentTypeValues)[number]
 export const ContentTypeSchema = z.enum(ContentTypeValues)
 
@@ -100,7 +101,8 @@ export const BlogPostUpdateSchema = z.object({
   secondary_keywords: z.array(z.string()).optional(),
   buyer_stage: BuyerStageSchema.nullable().optional(),
   content_type: ContentTypeSchema.nullable().optional(),
-  status: PostStatusSchema.optional(),
+  // W2: status is intentionally NOT updatable via the generic PATCH. Status
+  // transitions exist ONLY via promote/reject/Submit-for-Review, never here.
   is_gated: z.boolean().optional(),
   gate_cta: z.string().max(200).nullable().optional(),
   gate_asset_ids: z.array(z.enum(['tbips-checklist', 'bid-no-bid-framework', 'psib-roadmap'])).optional(),

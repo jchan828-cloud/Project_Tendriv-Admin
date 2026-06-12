@@ -10,10 +10,9 @@ import type { AutoblogRun } from '@/lib/types/autoblog'
 
 interface DashboardTabProps {
   initialRuns: AutoblogRun[]
-  onSwitchToReview?: () => void
 }
 
-export function DashboardTab({ initialRuns, onSwitchToReview }: DashboardTabProps) {
+export function DashboardTab({ initialRuns }: DashboardTabProps) {
   const [runs, setRuns] = useState<AutoblogRun[]>(initialRuns)
   const [triggering, setTriggering] = useState(false)
   const [triggerError, setTriggerError] = useState<string | null>(null)
@@ -123,14 +122,6 @@ export function DashboardTab({ initialRuns, onSwitchToReview }: DashboardTabProp
               ? () => {
                   setSelectedRun(null)
                   handleViewLive(selectedRun.run_id)
-                }
-              : undefined
-          }
-          onGoToReview={
-            selectedRun.status === 'completed' && !selectedRun.published_slug && onSwitchToReview
-              ? () => {
-                  setSelectedRun(null)
-                  onSwitchToReview()
                 }
               : undefined
           }

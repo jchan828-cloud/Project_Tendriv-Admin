@@ -2,7 +2,9 @@
 
 import { z } from 'zod'
 
-export const PublishChannelValues = ['blog', 'cyberimpact', 'linkedin-draft'] as const
+// W1: 'blog' removed — going live on blog_posts is a status transition owned by
+// promote/reject/Submit-for-Review, not a publish-router channel.
+export const PublishChannelValues = ['cyberimpact', 'linkedin-draft'] as const
 export const PublishRequestSchema = z.object({
   channels: z.array(z.enum(PublishChannelValues)).min(1),
 })

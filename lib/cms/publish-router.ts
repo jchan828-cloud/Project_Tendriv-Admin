@@ -3,27 +3,16 @@
 import { SupabaseClient } from '@supabase/supabase-js'
 import { BlogPost } from '@/lib/types/cms'
 
-export type PublishChannel = 'blog' | 'cyberimpact' | 'linkedin-draft'
+// W1: the 'blog' channel is gone — publishing a post live to blog_posts is a
+// status transition owned solely by promote/reject/Submit-for-Review, never by
+// this multi-channel router. The router now only fans out to external channels.
+export type PublishChannel = 'cyberimpact' | 'linkedin-draft'
 
 export interface ChannelResult {
   channel: PublishChannel
   success: boolean
   externalId: string | null
   error: string | null
-}
-
-async function publishToBlog(supabase: SupabaseClient, post: BlogPost): Promise<ChannelResult> {
-  const { error } = await supabase
-    .from('blog_posts')
-    .update({ status: 'published', published_at: new Date().toISOString() })
-    .eq('id', post.id)
-
-  return {
-    channel: 'blog',
-    success: !error,
-    externalId: error ? null : post.id,
-    error: error?.message ?? null,
-  }
 }
 
 async function publishToCyberimpact(post: BlogPost): Promise<ChannelResult> {
@@ -83,7 +72,6 @@ export async function publishToChannels(
 ): Promise<ChannelResult[]> {
   const promises = channels.map((channel) => {
     switch (channel) {
-      case 'blog': return publishToBlog(supabase, post)
       case 'cyberimpact': return publishToCyberimpact(post)
       case 'linkedin-draft': return publishToLinkedIn(supabase, post)
     }
@@ -94,7 +82,7 @@ export async function publishToChannels(
   return settled.map((result, i): ChannelResult => {
     if (result.status === 'fulfilled') return result.value
     return {
-      channel: channels[i] ?? 'blog',
+      channel: channels[i] ?? 'cyberimpact',
       success: false,
       externalId: null,
       error: String(result.reason),

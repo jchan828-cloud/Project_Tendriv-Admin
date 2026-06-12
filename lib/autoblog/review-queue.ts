@@ -11,18 +11,20 @@ const RUN_COLUMNS =
 
 export interface ReviewQueue {
   items: ReviewQueueItem[];
-  /** Non-fatal: queue renders from marketing alone; engine enrichment failed. */
+  /** Non-fatal: queue renders from blog_posts alone; run enrichment failed. */
   engineError: string | null;
 }
 
 /**
- * The approval queue: marketing blog_posts in 'review', each joined in code
- * (cross-DB) to its engine run via slug == published_slug. Marketing is the
- * source of truth for what needs review; a missing or unreadable engine run
- * degrades the row (no scores/cost), it never hides it.
+ * The approval queue: blog_posts in 'review', each joined in code to its
+ * autoblog_run via slug == published_slug. Since the DB consolidation both
+ * tables live in the same (marketing) DB, so this is single-DB display
+ * enrichment — one client serves both reads. blog_posts is the source of truth
+ * for what needs review; a missing or unreadable run degrades the row (no
+ * scores/cost), it never hides it.
  */
-export async function fetchReviewQueue(marketing: DbClient, engine: DbClient): Promise<ReviewQueue> {
-  const { data: posts, error } = await marketing
+export async function fetchReviewQueue(db: DbClient): Promise<ReviewQueue> {
+  const { data: posts, error } = await db
     .from('blog_posts')
     .select(POST_COLUMNS)
     .eq('status', 'review')
@@ -33,7 +35,7 @@ export async function fetchReviewQueue(marketing: DbClient, engine: DbClient): P
   const rows = (posts ?? []) as ReviewQueuePost[];
   if (rows.length === 0) return { items: [], engineError: null };
 
-  const { data: runs, error: runError } = await engine
+  const { data: runs, error: runError } = await db
     .from('autoblog_runs')
     .select(RUN_COLUMNS)
     .in('published_slug', rows.map((p) => p.slug));

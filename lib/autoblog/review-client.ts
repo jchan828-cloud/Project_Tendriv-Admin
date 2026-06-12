@@ -5,7 +5,7 @@ import type { ReviewActionResult } from '@/lib/autoblog/review-actions';
 // through this one function — the cross-DB logic lives server-side only.
 
 export interface ReviewActionOutcome {
-  /** done = all steps ok; partial = post moved but a mirror step failed;
+  /** done = all steps ok; partial = post moved but the topic recycle failed;
    *  conflict = already actioned elsewhere; error = nothing changed. */
   status: 'done' | 'partial' | 'conflict' | 'error';
   message: string | null;
@@ -43,12 +43,12 @@ export async function callReviewAction(
   if (!res.ok) {
     return {
       status: 'error',
-      message: result?.marketing?.detail ?? `HTTP ${res.status}`,
+      message: result?.post?.detail ?? `HTTP ${res.status}`,
       result,
     };
   }
   if (result && !result.ok) {
-    const details = [result.engine, result.topic]
+    const details = [result.topic]
       .filter((s): s is NonNullable<typeof s> => s != null && !s.ok)
       .map((s) => s.detail);
     return {

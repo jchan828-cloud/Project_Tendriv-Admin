@@ -1,19 +1,19 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
-// Since the DB split, autoblog_runs and autoblog_settings live in the ENGINE
-// DB. These tests pin the read-swap: engine tables are never queried through
-// the marketing client again.
+// Since the blog DB consolidation, autoblog_runs and autoblog_settings live in
+// the SAME marketing DB as blog_posts. These tests pin that the runs/settings
+// routes read through the single service-role client; the former separate
+// engine client no longer exists.
 
-const engineTables: string[] = [];
-const marketingTables: string[] = [];
+const tables: string[] = [];
 let settingsUpdate: Record<string, unknown> | null = null;
 
 const RUNS = [{ run_id: 'wrun_1', status: 'review' }];
 const SETTINGS = { id: 1, enabled: true, frequency: 'daily' };
 
-const engineClient = {
+const serviceRoleClient = {
   from: (table: string) => {
-    engineTables.push(table);
+    tables.push(table);
     return {
       select: () => ({
         order: () => ({
@@ -33,56 +33,43 @@ const engineClient = {
   },
 };
 
-const marketingClient = {
-  from: (table: string) => {
-    marketingTables.push(table);
-    throw new Error(`marketing client must not serve engine table reads (got ${table})`);
-  },
-};
-
 function mockClients() {
   vi.doMock('@/lib/autoblog/auth', () => ({
     requireContentAccess: vi.fn(async () => ({ userId: 'reviewer-user-1' })),
   }));
-  vi.doMock('@/lib/supabase/engine', () => ({
-    createEngineClient: () => engineClient,
-  }));
   vi.doMock('@/lib/supabase/server', () => ({
-    createServiceRoleClient: async () => marketingClient,
+    createServiceRoleClient: async () => serviceRoleClient,
   }));
 }
 
-describe('autoblog engine-table read swap', () => {
+describe('autoblog engine-table reads on the single marketing client', () => {
   beforeEach(() => {
     vi.resetModules();
-    engineTables.length = 0;
-    marketingTables.length = 0;
+    tables.length = 0;
     settingsUpdate = null;
   });
 
-  it('GET /api/autoblog/runs reads autoblog_runs through the engine client', async () => {
+  it('GET /api/autoblog/runs reads autoblog_runs through the service-role client', async () => {
     mockClients();
     const { GET } = await import('@/app/api/autoblog/runs/route');
     const res = await GET();
 
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual(RUNS);
-    expect(engineTables).toEqual(['autoblog_runs']);
-    expect(marketingTables).toEqual([]);
+    expect(tables).toEqual(['autoblog_runs']);
   });
 
-  it('GET /api/autoblog/settings reads autoblog_settings through the engine client', async () => {
+  it('GET /api/autoblog/settings reads autoblog_settings through the service-role client', async () => {
     mockClients();
     const { GET } = await import('@/app/api/autoblog/settings/route');
     const res = await GET();
 
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual(SETTINGS);
-    expect(engineTables).toEqual(['autoblog_settings']);
-    expect(marketingTables).toEqual([]);
+    expect(tables).toEqual(['autoblog_settings']);
   });
 
-  it('POST /api/autoblog/settings writes autoblog_settings through the engine client', async () => {
+  it('POST /api/autoblog/settings writes autoblog_settings through the service-role client', async () => {
     mockClients();
     const { POST } = await import('@/app/api/autoblog/settings/route');
     const res = await POST({
@@ -90,8 +77,7 @@ describe('autoblog engine-table read swap', () => {
     } as unknown as Request);
 
     expect(res.status).toBe(200);
-    expect(engineTables).toEqual(['autoblog_settings']);
-    expect(marketingTables).toEqual([]);
+    expect(tables).toEqual(['autoblog_settings']);
     expect(settingsUpdate).toMatchObject({ enabled: false, frequency: 'weekly' });
   });
 });
