@@ -61,7 +61,10 @@ export function RunDetailPanel({ run, onClose, onViewLive }: RunDetailPanelProps
   const seo = run.seo_metadata
 
   const isRunning = run.status === 'running'
-  const isPublished = run.status === 'published' || (run.status === 'completed' && !!run.published_slug)
+  // reconciled 2026-06-15: AutoblogRunStatus no longer includes 'published' (that is a
+  // blog_posts.status outcome, not a run status — live DB CHECK is {running,completed,failed,timeout}).
+  // A run is "published" when it completed and produced a published_slug.
+  const isPublished = run.status === 'completed' && !!run.published_slug
 
   return (
     <div
