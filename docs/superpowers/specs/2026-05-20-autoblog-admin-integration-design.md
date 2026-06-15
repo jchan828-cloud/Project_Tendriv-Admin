@@ -50,7 +50,7 @@ The page loads initial data server-side (run history, pending drafts, settings) 
 
 **Components**:
 - **Active run banner**: Shown when any row in `autoblog_runs` has `status = 'running'`. Shows stage name, tender title, elapsed time. "View live" expands an inline SSE stream panel.
-- **Run history table**: Columns — Tender, Status, Started, Duration, Action. Status badges: Running (amber), Completed (green), Published (green, different label), Failed (red).
+- **Run history table**: Columns — Tender, Status, Started, Duration, Action. Status badges reflect the live run-status set `{running, completed, failed, timeout}`: Running (amber), Completed (green), Failed (red), Timed out (muted) (reconciled 2026-06-15 vs live DB CHECK constraint). Whether a completed run was published is derived from `blog_posts`, not from the run status.
 - **"Run Now" button**: `POST /api/autoblog/trigger` → proxies to rfp-blog → returns `{ runId }`. Button shows loading state, then the active run banner appears.
 - **Live stream panel**: When expanded, connects to `GET /api/autoblog/stream/[runId]` (SSE proxy). Shows real-time workflow events as they arrive — stage transitions, tender selection, research findings, draft progress. Auto-scrolling log-style display.
 
@@ -70,7 +70,7 @@ The page loads initial data server-side (run history, pending drafts, settings) 
 - **Meta badges**: Primary keyword, schema type, E-E-A-T score, closing date countdown.
 - **Markdown preview**: Rendered HTML from the draft markdown stored in `autoblog_runs.draft_markdown`.
 - **Edit mode**: Clicking "Edit" swaps preview for a textarea with the raw markdown. "Save" persists back to `autoblog_runs.draft_markdown`. "Cancel" reverts.
-- **Publish action**: `POST /api/autoblog/publish` with `{ runId, markdown, headline, slug }`. This creates the blog post (details in API section) and updates `autoblog_runs.status = 'published'` and sets `published_slug`.
+- **Publish action**: `POST /api/autoblog/publish` with `{ runId, markdown, headline, slug }`. This creates the blog post with `blog_posts.status = 'published'` (details in API section) and sets `autoblog_runs.published_slug`. The run status stays `completed` — `published` is not a valid run status (reconciled 2026-06-15 vs live DB CHECK constraint).
 
 ### Tab 3: Settings
 
@@ -128,7 +128,7 @@ Publishes a draft:
 1. Reads `runId` from body.
 2. Fetches the draft data from `autoblog_runs` (markdown, headline, slug, SEO metadata).
 3. Inserts a new row in `blog_posts` (the existing published posts table) with `status = 'published'`.
-4. Updates `autoblog_runs` row: `status = 'published'`, `published_slug = slug`, `published_at = now()`.
+4. Updates `autoblog_runs` row: `published_slug = slug`, `published_at = now()`. The run `status` is left at `completed` — `published` is not a valid run status (reconciled 2026-06-15 vs live DB CHECK constraint).
 5. Returns `{ ok: true, slug }`.
 
 ### `POST /api/autoblog/review`
@@ -185,7 +185,7 @@ Single-row table with CHECK constraint on id to enforce exactly one config row.
 | id | UUID PK | auto-generated |
 | run_id | TEXT NOT NULL | WDK workflow run ID |
 | tender_id | TEXT NOT NULL | scout_notices.id |
-| status | TEXT NOT NULL | `'running'` default. Values: running, completed, failed |
+| status | TEXT NOT NULL | `'running'` default. Live CHECK values: running, completed, failed, timeout (reconciled 2026-06-15 vs live DB CHECK constraint) |
 | target_persona | TEXT NOT NULL | e.g. 'bid-manager' |
 | closing_date | DATE NOT NULL | tender closing date |
 | published_slug | TEXT NULL | set on publish |
@@ -204,7 +204,11 @@ Single-row table with CHECK constraint on id to enforce exactly one config row.
 - `content_type TEXT` — tender-analysis, how-to, glossary, sector-report
 - `published_at TIMESTAMPTZ` — when the draft was published (null until publish)
 
-The `status` column gains a new value: `published` (in addition to running, completed, failed).
+The `status` column does NOT gain a `published` value (reconciled 2026-06-15 vs
+live DB CHECK constraint). The live CHECK allows exactly `{running, completed,
+failed, timeout}`. Publishing updates `blog_posts.status`, not the run status;
+the run remains `completed`. Writing `published` to `autoblog_runs.status`
+throws.
 
 ### Existing table: `blog_posts` (publish target)
 
@@ -299,7 +303,7 @@ components/autoblog/
   draft-list.tsx                    ← Left panel draft list
   draft-preview.tsx                 ← Right panel markdown preview + actions
   draft-editor.tsx                  ← Markdown edit mode
-  status-badge.tsx                  ← Colored status pill (Running/Completed/Published/Failed)
+  status-badge.tsx                  ← Colored status pill (Running/Completed/Failed/Timeout — reconciled 2026-06-15 vs live DB CHECK constraint)
 
 lib/types/autoblog.ts               ← TypeScript types for autoblog
 lib/autoblog/proxy.ts               ← Shared proxy helper (fetch with auth header)

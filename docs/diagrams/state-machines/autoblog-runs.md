@@ -2,6 +2,13 @@
 
 Status of a single run of the external Autoblog engine.
 
+> **Reconciled 2026-06-15 vs live DB CHECK constraint.** The live
+> `autoblog_runs.status` CHECK allows EXACTLY four values:
+> `{running, completed, failed, timeout}`. The earlier docs/TS described a
+> six-value union (adding `published` and `rejected`); those two are NOT run
+> statuses — they belong to the content lifecycle on `blog_posts.status`. The
+> run status records only how the *execution* ended.
+
 ## ⚠ Cross-system entity — drift risk
 
 This table lives in the **external engine's** Supabase project,
@@ -12,7 +19,7 @@ enum as a TS union.
 | Concern | Where |
 |---|---|
 | Schema (CHECK / enum) | external engine repo at `AUTOBLOG_ENGINE_URL` |
-| Admin's mirror | `lib/types/autoblog.ts:6` — `export type AutoblogRunStatus = 'running' \| 'completed' \| 'published' \| 'failed' \| 'rejected' \| 'timeout'` |
+| Admin's mirror | `lib/types/autoblog.ts:6` — `export type AutoblogRunStatus = 'running' \| 'completed' \| 'failed' \| 'timeout'` (reconciled 2026-06-15 vs live DB CHECK constraint) |
 | Boundary | `lib/autoblog/proxy.ts:1` (`ENGINE_URL`, `proxyToEngine`) |
 | Wraps network errors | `EngineUnreachableError` at `lib/autoblog/proxy.ts:4` |
 
@@ -28,13 +35,14 @@ stateDiagram-v2
     running --> completed: engine finishes draft
     running --> failed: engine error
     running --> timeout: engine wall-clock exceeded
-    completed --> published: editor clicks Publish
-    completed --> rejected: editor rejects in Review tab
+    completed --> [*]
     failed --> [*]
     timeout --> [*]
-    rejected --> [*]
-    published --> [*]
 ```
+
+Editorial outcomes (publish / reject) are tracked on `blog_posts.status`, not
+on the run. The run is terminal once it reaches `completed`, `failed`, or
+`timeout` (reconciled 2026-06-15 vs live DB CHECK constraint).
 
 ## Transition table
 
@@ -44,8 +52,12 @@ stateDiagram-v2
 | `running` | `completed` | engine emits `event: status` on SSE | engine | `app/api/autoblog/stream/[runId]/route.ts` |
 | `running` | `failed` | engine error | engine | same |
 | `running` | `timeout` | engine wall-clock | engine | same |
-| `completed` | `published` | POST `/api/autoblog/publish` | user | `app/api/autoblog/publish/route.ts` |
-| `completed` | `rejected` | POST `/api/autoblog/review` (reject) | user | `app/api/autoblog/review/route.ts` |
+
+Publish / reject are editorial transitions on `blog_posts.status`, not run
+transitions (reconciled 2026-06-15 vs live DB CHECK constraint). The publish
+handler (`app/api/autoblog/publish/route.ts`) and review handler
+(`app/api/autoblog/review/route.ts`) write the `blog_posts` row; the run stays
+at `completed`.
 
 ## Source of truth
 
@@ -58,7 +70,7 @@ stateDiagram-v2
   `components/autoblog/status-badge.tsx`,
   `components/autoblog/live-stream-panel.tsx`,
   `components/autoblog/run-detail-panel.tsx` (verify each
-  switch/badge handles all 6 values).
+  switch/badge handles all 4 values).
 
 ## Known drift risks
 
@@ -66,8 +78,9 @@ stateDiagram-v2
    engine must ship first, then this repo's `AutoblogRunStatus`,
    then the UI badge map. Skipping any step yields a silent
    "unknown" badge.
-2. **`published` is a derived state** — the engine sets it only
-   after the admin POSTs `/publish` and the engine confirms. If
-   the admin INSERTs the `blog_posts` row but the publish call to
-   the engine fails, the run stays in `completed` while the post
-   is live — call this out in the publish handler.
+2. **Publish does not change the run status** (reconciled
+   2026-06-15 vs live DB CHECK constraint) — publishing INSERTs/updates a
+   `blog_posts` row and the post's lifecycle lives on `blog_posts.status`. The
+   run stays at `completed` regardless. Earlier docs treated `published` as a
+   run status; the live CHECK rejects it. Watch for code that still tries to
+   write `status='published'` to `autoblog_runs` — it will throw.

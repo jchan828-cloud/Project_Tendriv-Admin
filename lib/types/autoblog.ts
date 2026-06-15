@@ -3,7 +3,10 @@ import type { Tables } from './database.types'
 type AutoblogRunRow = Tables<'autoblog_runs'>
 type AutoblogSettingsRow = Tables<'autoblog_settings'>
 
-export type AutoblogRunStatus = 'running' | 'completed' | 'review' | 'published' | 'failed' | 'rejected' | 'timeout'
+// reconciled 2026-06-15: live CHECK is {running,completed,failed,timeout}
+// (vs live DB CHECK constraint). Editorial outcomes (review/published/rejected)
+// belong to blog_posts.status, not to the run.
+export type AutoblogRunStatus = 'running' | 'completed' | 'failed' | 'timeout'
 
 export type AutoblogRun = Omit<AutoblogRunRow, 'status' | 'seo_metadata'> & {
   status: AutoblogRunStatus
