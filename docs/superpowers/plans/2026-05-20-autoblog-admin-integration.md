@@ -353,7 +353,8 @@ export interface AutoblogRun {
   id: string;
   run_id: string;
   tender_id: string;
-  status: 'running' | 'completed' | 'published' | 'failed' | 'rejected' | 'timeout';
+  // reconciled 2026-06-15: live CHECK is {running,completed,failed,timeout} (vs live DB CHECK constraint)
+  status: 'running' | 'completed' | 'failed' | 'timeout';
   target_persona: string;
   closing_date: string;
   published_slug: string | null;
@@ -439,12 +440,12 @@ export const FREQUENCY_OPTIONS = [
   { value: 'weekly', label: 'Weekly' },
 ] as const;
 
+// reconciled 2026-06-15: live CHECK is {running,completed,failed,timeout} (vs live DB CHECK constraint).
+// 'published'/'rejected' are blog_posts.status editorial outcomes, not run statuses.
 export const STATUS_CONFIG = {
   running: { label: 'Running', color: 'var(--status-warning)', bg: 'var(--status-warning-bg)' },
   completed: { label: 'Completed', color: 'var(--status-success)', bg: 'var(--status-success-bg)' },
-  published: { label: 'Published', color: 'var(--status-success)', bg: 'var(--status-success-bg)' },
   failed: { label: 'Failed', color: 'var(--sovereign)', bg: 'var(--sovereign-pale)' },
-  rejected: { label: 'Rejected', color: 'var(--sovereign)', bg: 'var(--sovereign-pale)' },
   timeout: { label: 'Timed out', color: 'var(--text-muted)', bg: 'var(--surface-badge)' },
 } as const;
 ```

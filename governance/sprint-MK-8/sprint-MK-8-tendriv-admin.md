@@ -1101,7 +1101,7 @@ Logic:
 
 **3. Vercel cron schedule**
 
-In `vercel.json`: `{ "path": "/api/marketing/score/cron", "schedule": "0 3 * * *" }` (03:00 UTC = 23:00 ET)
+In `vercel.json`: `{ "path": "/api/marketing/score/cron", "schedule": "0 6 * * *" }` (06:00 UTC; reconciled 2026-06-15 vs vercel.json — live schedule is 06:00 UTC, not the 03:00 UTC originally specified)
 
 ### Acceptance Criteria
 
