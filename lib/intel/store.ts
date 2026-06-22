@@ -136,7 +136,7 @@ export async function insertExtraction(
     }))
     const { error } = await db
       .from('intel_technographics')
-      .upsert(rows, { ignoreDuplicates: true })
+      .upsert(rows, { onConflict: 'company_id,tool_name', ignoreDuplicates: true })
     if (error) console.error(`[intel:store] insertTechnographics failed: ${error.message}`)
     else technographics = rows.length
   }
