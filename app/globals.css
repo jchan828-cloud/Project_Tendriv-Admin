@@ -466,8 +466,10 @@
 @keyframes slideInLeft   { from { opacity: 0; transform: translateX(-12px); } to { opacity: 1; transform: translateX(0); } }
 @keyframes jadePulse     { 0%,100% { box-shadow: 0 0 0 0 var(--jade-15); } 50% { box-shadow: 0 0 0 6px transparent; } }
 @keyframes sovereignFlash{ 0%,100% { opacity: 1; } 50% { opacity: 0.6; } }
+@keyframes spin          { to { transform: rotate(360deg); } }
 
 @layer utilities {
+  .spin                   { animation: spin 0.9s linear infinite; }
   .animate-fade-in        { animation: fadeIn        var(--duration-slow)   var(--ease-out-expo) both; }
   .animate-fade-in-up     { animation: fadeInUp      var(--duration-slow)   var(--ease-out-expo) both; }
   .animate-slide-in-left  { animation: slideInLeft   var(--duration-slow)   var(--ease-out-expo) both; }

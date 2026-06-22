@@ -52,6 +52,7 @@ const allSections: NavSection[] = [
       { label: 'Prospects', href: '/crm' },
       { label: 'Accounts', href: '/crm/accounts' },
       { label: 'Geo', href: '/crm/geo' },
+      { label: 'Intelligence', href: '/intelligence' },
     ],
   },
   {
