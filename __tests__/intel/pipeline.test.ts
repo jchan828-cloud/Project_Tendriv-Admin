@@ -5,8 +5,9 @@ import {
   contactsQuery,
   technographicsQuery,
   signalsToText,
+  makeSearchRunner,
 } from '@/lib/intel/search'
-import type { GoogleIntelEnv } from '@/lib/intel/config'
+import { resolveSearchProvider, type GoogleIntelEnv } from '@/lib/intel/config'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 /* ── A chainable, thenable Supabase mock that records writes ──── */
@@ -53,6 +54,7 @@ function makeDb() {
 
 const ENV: GoogleIntelEnv = {
   placesApiKey: 'places-key',
+  serperApiKey: null,
   customSearchApiKey: 'cse-key',
   customSearchEngineId: 'cx-id',
   geminiApiKey: null,
@@ -91,6 +93,17 @@ function makeFetcher() {
             { shortText: 'AB', types: ['administrative_area_level_1'] },
             { shortText: 'CA', types: ['country'] },
             { longText: 'Calgary', types: ['locality'] },
+          ],
+        }),
+        { status: 200 },
+      )
+    }
+
+    if (url.includes('serper.dev')) {
+      return new Response(
+        JSON.stringify({
+          organic: [
+            { title: 'Jane Doe - CTO', link: 'https://linkedin.com/in/jane', snippet: 'CTO at Acme' },
           ],
         }),
         { status: 200 },
@@ -185,6 +198,74 @@ describe('runPipeline (full waterfall, mocked I/O)', () => {
     expect(companyUpserts).toHaveLength(2)
     const finalUpdate = log.updates.at(-1)?.patch as { status?: string }
     expect(finalUpdate.status).toBe('completed')
+  })
+
+  it('runs firmographics-only (skips Stages 3-4) when Custom Search is disabled', async () => {
+    const { db, log } = makeDb()
+    const fetcher = makeFetcher()
+    // ENV has no customSearch + no AI keys, and no injected extractor.
+    const summary = await runPipeline(
+      { query: 'Software companies in Alberta', limit: 2 },
+      { db, env: ENV, fetcher: fetcher as unknown as typeof fetch },
+    )
+
+    expect(summary.companies).toBe(2)
+    expect(summary.contacts).toBe(0)
+    expect(summary.technographics).toBe(0)
+
+    // Stage 3 was skipped entirely — no Custom Search calls were made.
+    const searchCalls = fetcher.mock.calls.filter(([u]) =>
+      String(u).includes('customsearch'),
+    )
+    expect(searchCalls).toHaveLength(0)
+
+    // Companies still stored from firmographics; run completed.
+    const companyUpserts = log.upserts.filter((u) => u.table === 'intel_companies')
+    expect(companyUpserts).toHaveLength(2)
+    const finalUpdate = log.updates.at(-1)?.patch as { status?: string }
+    expect(finalUpdate.status).toBe('completed')
+  })
+
+  it('uses the Serper provider for Stage 3 when SERPER_API_KEY is set', async () => {
+    const { db } = makeDb()
+    const fetcher = makeFetcher()
+    const serperEnv: GoogleIntelEnv = {
+      ...ENV,
+      serperApiKey: 'serper-key',
+      anthropicApiKey: 'anthropic-key',
+    }
+    const extractor = vi.fn(async () => ({
+      contacts: [{ full_name: 'Jane Doe', title: 'CTO', linkedin_url: null, confidence: 0.9 }],
+      technographics: [],
+    }))
+
+    // Serper wins provider resolution even when CSE vars are also present.
+    expect(resolveSearchProvider(serperEnv)).toBe('serper')
+
+    const summary = await runPipeline(
+      { query: 'Software companies in Alberta', limit: 1 },
+      { db, env: serperEnv, fetcher: fetcher as unknown as typeof fetch, extractor },
+    )
+
+    expect(summary.companies).toBe(1)
+    expect(summary.contacts).toBe(1)
+
+    // Stage 3 hit Serper, not Google Custom Search.
+    const calls = fetcher.mock.calls.map(([u]) => String(u))
+    expect(calls.some((u) => u.includes('serper.dev'))).toBe(true)
+    expect(calls.some((u) => u.includes('customsearch'))).toBe(false)
+  })
+
+  it('makeSearchRunner returns null when no provider is configured', () => {
+    const bare: GoogleIntelEnv = {
+      placesApiKey: 'p',
+      serperApiKey: null,
+      customSearchApiKey: '',
+      customSearchEngineId: '',
+      geminiApiKey: null,
+      anthropicApiKey: null,
+    }
+    expect(makeSearchRunner(bare)).toBeNull()
   })
 
   it('marks the run failed when seed generation throws', async () => {
