@@ -107,6 +107,9 @@ export async function runPipeline(
     let totalSignals = 0
     let detailCalls = 0
     let searchCalls = 0
+    // Surface the first Stage-4 failure to the run row so a silent extraction
+    // problem is diagnosable without digging through serverless logs.
+    let firstExtractionError: string | null = null
 
     for (const seed of seeds) {
       try {
@@ -130,6 +133,7 @@ export async function runPipeline(
             extraction = await getExtractor()(details.name, text)
           } catch (err) {
             const m = err instanceof Error ? err.message : String(err)
+            if (!firstExtractionError) firstExtractionError = m
             console.error(`[intel:pipeline] extraction failed for ${details.name}:`, m)
           }
         }
@@ -163,6 +167,11 @@ export async function runPipeline(
       companies_stored: companies,
       cost_estimate_cad: costEstimateCad,
       finished_at: new Date().toISOString(),
+      // Diagnostic only — run still "completed"; populated when signals existed
+      // but every extraction call failed.
+      ...(firstExtractionError && totalContacts === 0 && totalTech === 0
+        ? { error: `extraction: ${firstExtractionError}`.slice(0, 500) }
+        : {}),
     })
 
     return {

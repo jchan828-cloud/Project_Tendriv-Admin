@@ -13,10 +13,7 @@ import {
   GEMINI_MODEL,
   type GoogleIntelEnv,
 } from './config'
-import {
-  ExtractionResultSchema,
-  type ExtractionResult,
-} from '@/lib/types/intel'
+import type { ExtractionResult } from '@/lib/types/intel'
 import type { Fetcher } from './places'
 
 const SYSTEM_PROMPT = `You are a B2B data extraction engine. From the provided search-result snippets about a single company, extract two entity lists and return STRICT JSON ONLY (no prose, no markdown fences).
@@ -37,6 +34,56 @@ function parseModelJson(raw: string): unknown {
   const end = trimmed.lastIndexOf('}')
   if (start === -1 || end === -1) throw new Error('No JSON object in model output')
   return JSON.parse(trimmed.slice(start, end + 1))
+}
+
+/* ── Tolerant coercion ──────────────────────────────────────────────
+ * Models don't always honour exact field names ("name" vs "full_name",
+ * "linkedin" vs "linkedin_url"). Rather than let one renamed/invalid field
+ * throw out an entire company's extraction (the old strict .parse did), we map
+ * common aliases and drop only the items that still lack a required key. */
+
+function asRecordArray(v: unknown): Record<string, unknown>[] {
+  if (!Array.isArray(v)) return []
+  return v.filter((x): x is Record<string, unknown> => !!x && typeof x === 'object')
+}
+
+function pick(obj: Record<string, unknown>, keys: string[]): string | null {
+  for (const k of keys) {
+    const val = obj[k]
+    if (typeof val === 'string' && val.trim()) return val.trim()
+  }
+  return null
+}
+
+export function coerceExtraction(raw: unknown): ExtractionResult {
+  const root = (raw && typeof raw === 'object' ? (raw as Record<string, unknown>) : {})
+  const contactsRaw = asRecordArray(root.contacts ?? root.people ?? root.employees)
+  const techRaw = asRecordArray(
+    root.technographics ?? root.technologies ?? root.tech_stack ?? root.tools,
+  )
+
+  const contacts = contactsRaw
+    .map((c) => {
+      const full_name = pick(c, ['full_name', 'name', 'fullName', 'fullname'])
+      const conf = c.confidence
+      return {
+        full_name,
+        title: pick(c, ['title', 'role', 'position', 'headline', 'job_title']),
+        linkedin_url: pick(c, ['linkedin_url', 'linkedin', 'profile_url', 'url', 'link']),
+        confidence: typeof conf === 'number' ? conf : null,
+      }
+    })
+    .filter((c): c is ExtractionResult['contacts'][number] => Boolean(c.full_name))
+
+  const technographics = techRaw
+    .map((t) => ({
+      tool_name: pick(t, ['tool_name', 'tool', 'name', 'technology', 'software']),
+      category: pick(t, ['category', 'type', 'kind']),
+      evidence_url: pick(t, ['evidence_url', 'url', 'link', 'source']),
+    }))
+    .filter((t): t is ExtractionResult['technographics'][number] => Boolean(t.tool_name))
+
+  return { contacts, technographics }
 }
 
 /* ───────────────────────── Gemini (primary) ───────────────────── */
@@ -69,7 +116,7 @@ async function extractWithGemini(
     candidates?: { content?: { parts?: { text?: string }[] } }[]
   }
   const out = json.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
-  return ExtractionResultSchema.parse(parseModelJson(out))
+  return coerceExtraction(parseModelJson(out))
 }
 
 /* ──────────────────────── Anthropic (fallback) ─────────────────── */
@@ -105,7 +152,7 @@ async function extractWithAnthropic(
 
   const json = (await res.json()) as { content?: { text?: string }[] }
   const out = json.content?.[0]?.text ?? ''
-  return ExtractionResultSchema.parse(parseModelJson(out))
+  return coerceExtraction(parseModelJson(out))
 }
 
 /**
