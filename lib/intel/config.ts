@@ -87,18 +87,29 @@ export function readIntelEnv(): GoogleIntelEnv {
   }
 }
 
-/** Throws a single, actionable error listing every missing required var. */
+/**
+ * Stage 3 (Signal Discovery) is gated on Custom Search being fully configured.
+ * Google closed the Custom Search JSON API to new GCP projects in 2026, so this
+ * is now opt-in: when it (and an AI provider) aren't set, the pipeline runs
+ * firmographics-only and skips Stages 3–4 instead of erroring.
+ */
+export function customSearchEnabled(env: GoogleIntelEnv): boolean {
+  return Boolean(
+    env.customSearchApiKey &&
+      env.customSearchEngineId &&
+      (env.geminiApiKey || env.anthropicApiKey),
+  )
+}
+
+/**
+ * Throws a single, actionable error listing every missing *required* var.
+ * Only the Places key is hard-required (Stages 1–2 + 5). Custom Search + AI are
+ * optional — without them the pipeline degrades to firmographics-only.
+ */
 export function assertIntelEnv(env: GoogleIntelEnv): void {
-  const missing: string[] = []
-  if (!env.placesApiKey) missing.push('GOOGLE_PLACES_API_KEY')
-  if (!env.customSearchApiKey)
-    missing.push('GOOGLE_CUSTOM_SEARCH_API_KEY (or GOOGLE_PLACES_API_KEY)')
-  if (!env.customSearchEngineId) missing.push('GOOGLE_CUSTOM_SEARCH_ENGINE_ID')
-  if (!env.geminiApiKey && !env.anthropicApiKey)
-    missing.push('GEMINI_API_KEY or ANTHROPIC_API_KEY (for AI extraction)')
-  if (missing.length > 0) {
+  if (!env.placesApiKey) {
     throw new Error(
-      `B2B intelligence pipeline misconfigured — missing env: ${missing.join(', ')}`,
+      'B2B intelligence pipeline misconfigured — missing env: GOOGLE_PLACES_API_KEY',
     )
   }
 }

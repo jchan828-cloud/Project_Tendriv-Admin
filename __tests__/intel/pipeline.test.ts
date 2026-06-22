@@ -187,6 +187,32 @@ describe('runPipeline (full waterfall, mocked I/O)', () => {
     expect(finalUpdate.status).toBe('completed')
   })
 
+  it('runs firmographics-only (skips Stages 3-4) when Custom Search is disabled', async () => {
+    const { db, log } = makeDb()
+    const fetcher = makeFetcher()
+    // ENV has no customSearch + no AI keys, and no injected extractor.
+    const summary = await runPipeline(
+      { query: 'Software companies in Alberta', limit: 2 },
+      { db, env: ENV, fetcher: fetcher as unknown as typeof fetch },
+    )
+
+    expect(summary.companies).toBe(2)
+    expect(summary.contacts).toBe(0)
+    expect(summary.technographics).toBe(0)
+
+    // Stage 3 was skipped entirely — no Custom Search calls were made.
+    const searchCalls = fetcher.mock.calls.filter(([u]) =>
+      String(u).includes('customsearch'),
+    )
+    expect(searchCalls).toHaveLength(0)
+
+    // Companies still stored from firmographics; run completed.
+    const companyUpserts = log.upserts.filter((u) => u.table === 'intel_companies')
+    expect(companyUpserts).toHaveLength(2)
+    const finalUpdate = log.updates.at(-1)?.patch as { status?: string }
+    expect(finalUpdate.status).toBe('completed')
+  })
+
   it('marks the run failed when seed generation throws', async () => {
     const { db, log } = makeDb()
     const failing = vi.fn(async () => new Response('boom', { status: 500 }))

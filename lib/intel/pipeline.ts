@@ -16,9 +16,14 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import {
   UNIT_COST_USD,
   USD_TO_CAD,
+  customSearchEnabled,
   type GoogleIntelEnv,
 } from './config'
-import type { PipelineRequest, ExtractionResult } from '@/lib/types/intel'
+import type {
+  PipelineRequest,
+  ExtractionResult,
+  DiscoveredSignal,
+} from '@/lib/types/intel'
 import { textSearchSeeds, placeDetails, type Fetcher } from './places'
 import { discoverSignals, signalsToText } from './search'
 import { makeExtractor, type Extractor } from './extract'
@@ -68,6 +73,11 @@ export async function runPipeline(
 ): Promise<PipelineSummary> {
   const { db, env } = deps
   const fetcher = deps.fetcher ?? fetch
+  // Stage 3 (Custom Search) is opt-in: Google closed the JSON API to new GCP
+  // projects in 2026. When it isn't configured we run firmographics-only and
+  // skip Stages 3–4 rather than 403 on every company. An injected extractor
+  // (tests) also implies signal processing is wanted.
+  const signalDiscoveryEnabled = customSearchEnabled(env) || Boolean(deps.extractor)
   // Construct the extractor lazily so a misconfigured AI provider never aborts
   // the cheap seed/enrich stages before the run is even recorded.
   let extractor = deps.extractor
@@ -96,15 +106,18 @@ export async function runPipeline(
         const details = await placeDetails(seed.placeId, env.placesApiKey, { fetcher })
         detailCalls++
 
-        /* ── Stage 3: Signal Discovery ────────────────────────── */
-        const signals = await discoverSignals(
-          details.name,
-          env.customSearchApiKey,
-          env.customSearchEngineId,
-          { fetcher },
-        )
-        searchCalls += 2
-        totalSignals += signals.reduce((n, s) => n + s.hits.length, 0)
+        /* ── Stage 3: Signal Discovery (opt-in) ───────────────── */
+        let signals: DiscoveredSignal[] = []
+        if (signalDiscoveryEnabled) {
+          signals = await discoverSignals(
+            details.name,
+            env.customSearchApiKey,
+            env.customSearchEngineId,
+            { fetcher },
+          )
+          searchCalls += 2
+          totalSignals += signals.reduce((n, s) => n + s.hits.length, 0)
+        }
 
         /* ── Stage 4: AI Extraction ───────────────────────────── */
         let extraction: ExtractionResult = EMPTY_EXTRACTION
