@@ -16,7 +16,6 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import {
   UNIT_COST_USD,
   USD_TO_CAD,
-  customSearchEnabled,
   type GoogleIntelEnv,
 } from './config'
 import type {
@@ -25,7 +24,12 @@ import type {
   DiscoveredSignal,
 } from '@/lib/types/intel'
 import { textSearchSeeds, placeDetails, type Fetcher } from './places'
-import { discoverSignals, signalsToText } from './search'
+import {
+  discoverSignals,
+  signalsToText,
+  makeSearchRunner,
+  type SearchRunner,
+} from './search'
 import { makeExtractor, type Extractor } from './extract'
 import { normalizeCompany } from './normalize'
 import {
@@ -42,6 +46,8 @@ export type PipelineDeps = {
   fetcher?: Fetcher
   /** Override the AI extractor (tests / custom providers). */
   extractor?: Extractor
+  /** Override the Stage-3 search runner (tests / custom providers). */
+  searchRunner?: SearchRunner
   /** Optional throttle between companies (ms) to respect rate limits. */
   delayMs?: number
 }
@@ -73,11 +79,13 @@ export async function runPipeline(
 ): Promise<PipelineSummary> {
   const { db, env } = deps
   const fetcher = deps.fetcher ?? fetch
-  // Stage 3 (Custom Search) is opt-in: Google closed the JSON API to new GCP
-  // projects in 2026. When it isn't configured we run firmographics-only and
-  // skip Stages 3–4 rather than 403 on every company. An injected extractor
-  // (tests) also implies signal processing is wanted.
-  const signalDiscoveryEnabled = customSearchEnabled(env) || Boolean(deps.extractor)
+  // Stage 3 is opt-in (needs a search provider + an AI provider). Serper.dev is
+  // preferred; Google CSE only works on grandfathered projects. When neither is
+  // configured we run firmographics-only and skip Stages 3–4.
+  const searchRunner = deps.searchRunner ?? makeSearchRunner(env, { fetcher })
+  const canExtract =
+    Boolean(deps.extractor) || Boolean(env.geminiApiKey) || Boolean(env.anthropicApiKey)
+  const discoverEnabled = Boolean(searchRunner) && canExtract
   // Construct the extractor lazily so a misconfigured AI provider never aborts
   // the cheap seed/enrich stages before the run is even recorded.
   let extractor = deps.extractor
@@ -108,13 +116,8 @@ export async function runPipeline(
 
         /* ── Stage 3: Signal Discovery (opt-in) ───────────────── */
         let signals: DiscoveredSignal[] = []
-        if (signalDiscoveryEnabled) {
-          signals = await discoverSignals(
-            details.name,
-            env.customSearchApiKey,
-            env.customSearchEngineId,
-            { fetcher },
-          )
+        if (discoverEnabled && searchRunner) {
+          signals = await discoverSignals(details.name, searchRunner)
           searchCalls += 2
           totalSignals += signals.reduce((n, s) => n + s.hits.length, 0)
         }

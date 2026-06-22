@@ -11,6 +11,7 @@
 
 export const PLACES_BASE_URL = 'https://places.googleapis.com/v1'
 export const CUSTOM_SEARCH_URL = 'https://www.googleapis.com/customsearch/v1'
+export const SERPER_URL = process.env.SERPER_URL ?? 'https://google.serper.dev/search'
 
 /**
  * Default generative endpoint. Vertex AI proper uses OAuth + a regional host;
@@ -68,6 +69,7 @@ export const USD_TO_CAD = Number(process.env.USD_TO_CAD ?? '1.37')
 
 export type GoogleIntelEnv = {
   placesApiKey: string
+  serperApiKey: string | null
   customSearchApiKey: string
   customSearchEngineId: string
   geminiApiKey: string | null
@@ -77,6 +79,7 @@ export type GoogleIntelEnv = {
 export function readIntelEnv(): GoogleIntelEnv {
   return {
     placesApiKey: process.env.GOOGLE_PLACES_API_KEY ?? '',
+    serperApiKey: process.env.SERPER_API_KEY ?? null,
     customSearchApiKey:
       process.env.GOOGLE_CUSTOM_SEARCH_API_KEY ??
       process.env.GOOGLE_PLACES_API_KEY ??
@@ -87,17 +90,28 @@ export function readIntelEnv(): GoogleIntelEnv {
   }
 }
 
+/** Stage 3 search providers, in priority order. */
+export type SearchProvider = 'serper' | 'google_cse'
+
 /**
- * Stage 3 (Signal Discovery) is gated on Custom Search being fully configured.
- * Google closed the Custom Search JSON API to new GCP projects in 2026, so this
- * is now opt-in: when it (and an AI provider) aren't set, the pipeline runs
- * firmographics-only and skips Stages 3–4 instead of erroring.
+ * Pick the configured Stage-3 provider, or null when none is set. Serper.dev is
+ * preferred because Google closed the Custom Search JSON API to new GCP projects
+ * in 2026 (google_cse only works on grandfathered projects).
  */
-export function customSearchEnabled(env: GoogleIntelEnv): boolean {
+export function resolveSearchProvider(env: GoogleIntelEnv): SearchProvider | null {
+  if (env.serperApiKey) return 'serper'
+  if (env.customSearchApiKey && env.customSearchEngineId) return 'google_cse'
+  return null
+}
+
+/**
+ * Stage 3 (Signal Discovery) is opt-in: it needs both a search provider and an
+ * AI provider. Without them the pipeline runs firmographics-only and skips
+ * Stages 3–4 instead of erroring.
+ */
+export function signalDiscoveryEnabled(env: GoogleIntelEnv): boolean {
   return Boolean(
-    env.customSearchApiKey &&
-      env.customSearchEngineId &&
-      (env.geminiApiKey || env.anthropicApiKey),
+    resolveSearchProvider(env) && (env.geminiApiKey || env.anthropicApiKey),
   )
 }
 
